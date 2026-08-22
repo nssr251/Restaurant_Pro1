@@ -21,6 +21,7 @@ export default function App() {
           }
         >
           <Route index element={<OwnerHome />} />
+          <Route path="orders" element={<OwnerOrders />} />
         </Route>
       </Routes>
     </BrowserRouter>
