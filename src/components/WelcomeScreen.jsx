@@ -49,7 +49,7 @@ export default function WelcomeScreen({ restaurantInfo, onEnter }) {
       <div className="mt-8 flex items-center gap-4">
         {restaurantInfo.contact_phone && (
           
-            href={`tel:${restaurantInfo.contact_phone}`}
+           href={`tel:${restaurantInfo.contact_phone}`}
             className="font-body text-xs text-paper/50 underline underline-offset-2"
           >
             Call {restaurantInfo.contact_phone}
