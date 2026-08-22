@@ -1,7 +1,10 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { signOut } from "../../lib/auth";
 
-const NAV_ITEMS = [{ to: "/owner", label: "Dashboard", end: true }];
+const NAV_ITEMS = [
+  { to: "/owner", label: "Dashboard", end: true },
+  { to: "/owner/orders", label: "Orders" },
+];
 
 export default function OwnerLayout() {
   const navigate = useNavigate();
