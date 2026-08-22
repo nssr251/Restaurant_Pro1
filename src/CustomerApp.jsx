@@ -31,7 +31,7 @@ export default function CustomerApp() {
       try {
         const [menu, info] = await Promise.all([fetchMenu(), fetchRestaurantInfo()]);
         setMenuByCategory(menu);
-        setRestaurantInfo({ name: info.name, tagline: RESTAURANT_DEFAULTS.tagline });
+       setRestaurantInfo({ ...info, tagline: info.tagline || RESTAURANT_DEFAULTS.tagline });
         setActiveCategory(Object.keys(menu)[0] || null);
       } catch (err) {
         setLoadError(err.message || "Could not load the menu. Check your connection.");
