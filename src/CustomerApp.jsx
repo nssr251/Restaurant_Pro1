@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Header from "./components/Header";
+import WelcomeScreen from "./components/WelcomeScreen";
 import CategoryTabs from "./components/CategoryTabs";
 import MenuList from "./components/MenuList";
 import CartSheet, { CartPill } from "./components/CartSheet";
@@ -13,7 +14,7 @@ import { RESTAURANT_DEFAULTS } from "./config";
 const ACTIVE_ORDER_KEY = "restaurant_active_order_id";
 
 export default function CustomerApp() {
-  const [view, setView] = useState("menu");
+  const [view, setView] = useState("welcome");
   const [menuByCategory, setMenuByCategory] = useState({});
   const [restaurantInfo, setRestaurantInfo] = useState(RESTAURANT_DEFAULTS);
   const [loading, setLoading] = useState(true);
@@ -97,7 +98,6 @@ export default function CustomerApp() {
   if (view === "tracking" && order) {
     return <OrderTicket order={order} rider={order.riders || rider} onNewOrder={handleNewOrder} />;
   }
-
   if (view === "checkout") {
     return (
       <CheckoutForm
@@ -107,6 +107,10 @@ export default function CustomerApp() {
         onSubmit={handlePlaceOrder}
       />
     );
+  }
+
+  if (view === "welcome") {
+    return <WelcomeScreen restaurantInfo={restaurantInfo} onEnter={() => setView("menu")} />;
   }
 
   if (loading) {
