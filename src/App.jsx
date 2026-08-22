@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import CustomerApp from "./CustomerApp";
 import OwnerLogin from "./pages/owner/OwnerLogin";
 import OwnerHome from "./pages/owner/OwnerHome";
+import OwnerOrders from "./pages/owner/OwnerOrders";
 import OwnerLayout from "./components/owner/OwnerLayout";
 import ProtectedRoute from "./components/owner/ProtectedRoute";
 
