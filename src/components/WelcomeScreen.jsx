@@ -4,7 +4,7 @@ export default function WelcomeScreen({ restaurantInfo, onEnter }) {
   const open = isRestaurantOpen(restaurantInfo.opens_at, restaurantInfo.closes_at);
   const hasHours = restaurantInfo.opens_at && restaurantInfo.closes_at;
   const mapsUrl = restaurantInfo.address
-    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(restaurantInfo.address)}`
+    ? "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(restaurantInfo.address)
     : null;
 
   return (
@@ -49,7 +49,7 @@ export default function WelcomeScreen({ restaurantInfo, onEnter }) {
       <div className="mt-8 flex items-center gap-4">
         {restaurantInfo.contact_phone && (
           
-           href={`tel:${restaurantInfo.contact_phone}`}
+            href={"tel:" + restaurantInfo.contact_phone}
             className="font-body text-xs text-paper/50 underline underline-offset-2"
           >
             Call {restaurantInfo.contact_phone}
