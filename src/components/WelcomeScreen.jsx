@@ -53,7 +53,7 @@ export default function WelcomeScreen({ restaurantInfo, onEnter }) {
           </span>
         )}
         {mapsUrl && (
-          
+          <a
             href={mapsUrl}
             target="_blank"
             rel="noreferrer"
