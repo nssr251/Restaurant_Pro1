@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useOwnerOrders } from "../../hooks/useOwnerOrders";
+import { useOutletContext } from "react-router-dom";
 import { advanceOrderStatus, assignRiderToOrder } from "../../lib/ownerOrders";
 import { fetchAllRiders } from "../../lib/ownerRiders";
 import { ORDER_STAGES } from "../../lib/orders";
@@ -25,16 +25,19 @@ function nextStatusFor(order) {
 }
 
 export default function OwnerOrders() {
-  const { orders, loading, error } = useOwnerOrders();
+  const { orders, loading, error } = useOutletContext();
   const [advancingId, setAdvancingId] = useState(null);
   const [riders, setRiders] = useState([]);
+  const [ridersError, setRidersError] = useState(null);
 
   const loadRiders = useCallback(async () => {
     try {
       const data = await fetchAllRiders();
       setRiders(data);
-    } catch {
-      // Non-fatal — the order queue still works without the rider list loaded
+      setRidersError(null);
+    } catch (err) {
+      setRidersError(err.message || "Could not load riders.");
+      console.error("Failed to load riders:", err);
     }
   }, []);
 
@@ -72,10 +75,16 @@ export default function OwnerOrders() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
         <h1 className="font-display text-2xl font-semibold text-ink">Live Orders</h1>
         <span className="font-body text-sm text-ink/50">{completedTodayCount} completed today</span>
       </div>
+
+      {ridersError && (
+        <p className="font-body text-xs text-chili bg-chili/5 border border-chili/20 rounded-lg px-3 py-2 mb-4">
+          Riders couldn't be loaded ({ridersError}) — rider assignment won't show until this is fixed.
+        </p>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {COLUMNS.map((col) => {
