@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { fetchAllMenuItems, deleteMenuItem } from "../../lib/ownerMenu";
+import { formatTime } from "../../lib/timeWindow";
 import MenuItemForm from "../../components/owner/MenuItemForm";
 
 export default function OwnerMenu() {
@@ -99,6 +100,11 @@ export default function OwnerMenu() {
                 >
                   {item.is_available ? "Available" : "Hidden"}
                 </span>
+                {item.auto_schedule && item.available_from && item.available_until && (
+                  <p className="font-ticket text-[10px] text-ink/40 mt-1">
+                    {formatTime(item.available_from)} – {formatTime(item.available_until)}
+                  </p>
+                )}
               </div>
             </div>
             <div className="flex gap-2 mt-3 pt-3 border-t border-ink/10">
