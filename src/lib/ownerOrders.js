@@ -20,6 +20,7 @@ export async function fetchOrderWithItems(orderId) {
   return data;
 }
 
+// Subscribe to every order change (owner needs to see all orders, not just one)
 export function subscribeToAllOrders(onInsert, onUpdate) {
   const channel = supabase
     .channel("owner-orders")
@@ -32,6 +33,19 @@ export function subscribeToAllOrders(onInsert, onUpdate) {
     .subscribe();
 
   return () => supabase.removeChannel(channel);
+}
+
+export async function assignRiderToOrder(orderId, riderId) {
+  const { data, error } = await supabase
+    .from("orders")
+    .update({ rider_id: riderId })
+    .eq("id", orderId)
+    .select()
+    .single();
+  if (error) throw error;
+
+  await supabase.from("riders").update({ status: "busy" }).eq("id", riderId);
+  return data;
 }
 
 export async function advanceOrderStatus(order) {
@@ -54,5 +68,10 @@ export async function advanceOrderStatus(order) {
     .single();
 
   if (error) throw error;
+
+  if (nextStatus === "delivered" && order.rider_id) {
+    await supabase.from("riders").update({ status: "available" }).eq("id", order.rider_id);
+  }
+
   return data;
 }
