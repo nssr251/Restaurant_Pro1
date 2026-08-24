@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useOwnerOrders } from "../../hooks/useOwnerOrders";
-import { advanceOrderStatus } from "../../lib/ownerOrders";
+import { advanceOrderStatus, assignRiderToOrder } from "../../lib/ownerOrders";
+import { fetchAllRiders } from "../../lib/ownerRiders";
 import { ORDER_STAGES } from "../../lib/orders";
 import OrderCard from "../../components/owner/OrderCard";
 
@@ -26,6 +27,20 @@ function nextStatusFor(order) {
 export default function OwnerOrders() {
   const { orders, loading, error } = useOwnerOrders();
   const [advancingId, setAdvancingId] = useState(null);
+  const [riders, setRiders] = useState([]);
+
+  const loadRiders = useCallback(async () => {
+    try {
+      const data = await fetchAllRiders();
+      setRiders(data);
+    } catch {
+      // Non-fatal — the order queue still works without the rider list loaded
+    }
+  }, []);
+
+  useEffect(() => {
+    loadRiders();
+  }, [loadRiders]);
 
   async function handleAdvance(order) {
     setAdvancingId(order.id);
@@ -35,6 +50,15 @@ export default function OwnerOrders() {
       alert(err.message || "Could not update the order. Please try again.");
     } finally {
       setAdvancingId(null);
+    }
+  }
+
+  async function handleAssignRider(order, riderId) {
+    try {
+      await assignRiderToOrder(order.id, riderId);
+      await loadRiders();
+    } catch (err) {
+      alert(err.message || "Could not assign the rider. Please try again.");
     }
   }
 
@@ -72,6 +96,8 @@ export default function OwnerOrders() {
                     nextStatus={nextStatusFor(order)}
                     onAdvance={handleAdvance}
                     advancing={advancingId === order.id}
+                    riders={riders}
+                    onAssignRider={handleAssignRider}
                   />
                 ))}
               </div>
