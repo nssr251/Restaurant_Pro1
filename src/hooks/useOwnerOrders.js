@@ -1,11 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
 import { fetchAllOrders, fetchOrderWithItems, subscribeToAllOrders } from "../lib/ownerOrders";
-import { playNewOrderChime, requestNotificationPermission, showNewOrderNotification } from "../lib/sound";
+import {
+  playNewOrderChime,
+  showNewOrderNotification,
+  getNotificationPermission,
+} from "../lib/sound";
 
 export function useOwnerOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [notificationPermission, setNotificationPermission] = useState(getNotificationPermission());
 
   const upsertOrder = useCallback((updated) => {
     setOrders((prev) => {
@@ -31,10 +36,6 @@ export function useOwnerOrders() {
   }, []);
 
   useEffect(() => {
-    requestNotificationPermission();
-  }, []);
-
-  useEffect(() => {
     const unsubscribe = subscribeToAllOrders(
       async (newOrderStub) => {
         playNewOrderChime();
@@ -52,5 +53,5 @@ export function useOwnerOrders() {
     return unsubscribe;
   }, [upsertOrder]);
 
-  return { orders, loading, error };
+  return { orders, loading, error, notificationPermission, setNotificationPermission };
 }
