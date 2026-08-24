@@ -1,9 +1,12 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { signOut } from "../../lib/auth";
 
+// Future stages add entries here — Orders, Menu, Riders — nothing else about
+// this layout needs to change when they do.
 const NAV_ITEMS = [
   { to: "/owner", label: "Dashboard", end: true },
   { to: "/owner/orders", label: "Orders" },
+  { to: "/owner/menu", label: "Menu" },
 ];
 
 export default function OwnerLayout() {
