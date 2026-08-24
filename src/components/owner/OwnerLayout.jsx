@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { to: "/owner", label: "Dashboard", end: true },
   { to: "/owner/orders", label: "Orders" },
   { to: "/owner/menu", label: "Menu" },
+  { to: "/owner/riders", label: "Riders" },
 ];
 
 export default function OwnerLayout() {
