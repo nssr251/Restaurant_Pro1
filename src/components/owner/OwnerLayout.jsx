@@ -1,11 +1,20 @@
+import { useEffect } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { signOut } from "../../lib/auth";
 import { useOwnerOrders } from "../../hooks/useOwnerOrders";
+import { requestNotificationPermission } from "../../lib/sound";
 
 export default function OwnerLayout() {
   const navigate = useNavigate();
   const ownerOrdersState = useOwnerOrders();
-  const newOrdersCount = ownerOrdersState.orders.filter((o) => o.status === "received").length;
+  const { orders, notificationPermission, setNotificationPermission } = ownerOrdersState;
+  const newOrdersCount = orders.filter((o) => o.status === "received").length;
+
+  // Reliable indicator that doesn't depend on notification permission at all —
+  // shows the unread count right in the browser tab, visible even on another tab/app
+  useEffect(() => {
+    document.title = newOrdersCount > 0 ? "(" + newOrdersCount + ") Owner Panel" : "Owner Panel";
+  }, [newOrdersCount]);
 
   const NAV_ITEMS = [
     { to: "/owner", label: "Dashboard", end: true, badge: null },
@@ -17,6 +26,11 @@ export default function OwnerLayout() {
   async function handleLogout() {
     await signOut();
     navigate("/owner/login", { replace: true });
+  }
+
+  async function handleEnableNotifications() {
+    const result = await requestNotificationPermission();
+    setNotificationPermission(result);
   }
 
   return (
@@ -46,6 +60,17 @@ export default function OwnerLayout() {
             </NavLink>
           ))}
         </nav>
+
+        {notificationPermission !== "granted" && notificationPermission !== "unsupported" && (
+          <button
+            onClick={handleEnableNotifications}
+            className="m-3 px-3 py-2 rounded-lg font-body text-xs bg-turmeric/20 text-turmeric hover:bg-turmeric/30 transition-colors text-left"
+          >
+            {notificationPermission === "denied"
+              ? "Notifications blocked — check browser site settings"
+              : "🔔 Enable order notifications"}
+          </button>
+        )}
 
         <button
           onClick={handleLogout}
