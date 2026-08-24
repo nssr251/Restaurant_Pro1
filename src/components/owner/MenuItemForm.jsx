@@ -7,6 +7,9 @@ export default function MenuItemForm({ existingItem, onClose, onSaved }) {
   const [price, setPrice] = useState(existingItem?.price ?? "");
   const [category, setCategory] = useState(existingItem?.category || "");
   const [isAvailable, setIsAvailable] = useState(existingItem?.is_available ?? true);
+  const [autoSchedule, setAutoSchedule] = useState(existingItem?.auto_schedule ?? false);
+  const [availableFrom, setAvailableFrom] = useState(existingItem?.available_from?.slice(0, 5) || "");
+  const [availableUntil, setAvailableUntil] = useState(existingItem?.available_until?.slice(0, 5) || "");
   const [imageFile, setImageFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(existingItem?.image_url || null);
   const [saving, setSaving] = useState(false);
@@ -36,6 +39,9 @@ export default function MenuItemForm({ existingItem, onClose, onSaved }) {
         category: category.trim() || null,
         is_available: isAvailable,
         image_url: imageUrl,
+        auto_schedule: autoSchedule,
+        available_from: autoSchedule ? availableFrom : null,
+        available_until: autoSchedule ? availableUntil : null,
       };
 
       if (existingItem) {
@@ -139,6 +145,50 @@ export default function MenuItemForm({ existingItem, onClose, onSaved }) {
             />
             Available to customers
           </label>
+
+          <div className="border-t border-ink/10 pt-4">
+            <label className="flex items-center gap-2 font-body text-sm text-ink">
+              <input
+                type="checkbox"
+                checked={autoSchedule}
+                onChange={(e) => setAutoSchedule(e.target.checked)}
+              />
+              Auto-schedule by time (e.g. Tiffins 7–11 AM)
+            </label>
+
+            {autoSchedule && (
+              <div className="flex gap-3 mt-3">
+                <div className="flex-1">
+                  <label className="font-body text-xs font-semibold text-ink/60 uppercase tracking-wide">
+                    From
+                  </label>
+                  <input
+                    type="time"
+                    value={availableFrom}
+                    onChange={(e) => setAvailableFrom(e.target.value)}
+                    required={autoSchedule}
+                    className="w-full mt-1 border border-ink/15 rounded-lg px-3 py-2 font-body text-ink"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="font-body text-xs font-semibold text-ink/60 uppercase tracking-wide">
+                    Until
+                  </label>
+                  <input
+                    type="time"
+                    value={availableUntil}
+                    onChange={(e) => setAvailableUntil(e.target.value)}
+                    required={autoSchedule}
+                    className="w-full mt-1 border border-ink/15 rounded-lg px-3 py-2 font-body text-ink"
+                  />
+                </div>
+              </div>
+            )}
+            <p className="font-body text-xs text-ink/40 mt-2">
+              This item will only show to customers within this time window, on top of the
+              "Available to customers" switch above.
+            </p>
+          </div>
 
           {error && <p className="font-body text-sm text-chili">{error}</p>}
 
