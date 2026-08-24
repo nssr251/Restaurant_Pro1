@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useOwnerOrders } from "../../hooks/useOwnerOrders";
+import { useOutletContext } from "react-router-dom";
 
 function toLocalDateStr(dateInput) {
   const d = new Date(dateInput);
@@ -14,7 +14,7 @@ function todayStr() {
 }
 
 export default function OwnerHome() {
-  const { orders, loading } = useOwnerOrders();
+  const { orders, loading } = useOutletContext();
   const [selectedDate, setSelectedDate] = useState(todayStr());
 
   const isViewingToday = selectedDate === todayStr();
