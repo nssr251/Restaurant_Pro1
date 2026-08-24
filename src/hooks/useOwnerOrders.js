@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { fetchAllOrders, fetchOrderWithItems, subscribeToAllOrders } from "../lib/ownerOrders";
-import { playNewOrderChime } from "../lib/sound";
+import { playNewOrderChime, requestNotificationPermission, showNewOrderNotification } from "../lib/sound";
 
 export function useOwnerOrders() {
   const [orders, setOrders] = useState([]);
@@ -31,10 +31,16 @@ export function useOwnerOrders() {
   }, []);
 
   useEffect(() => {
+    requestNotificationPermission();
+  }, []);
+
+  useEffect(() => {
     const unsubscribe = subscribeToAllOrders(
       async (newOrderStub) => {
         playNewOrderChime();
+        showNewOrderNotification(newOrderStub);
         try {
+          // Realtime payloads don't include joined order_items — fetch the full row
           const full = await fetchOrderWithItems(newOrderStub.id);
           upsertOrder(full);
         } catch {
