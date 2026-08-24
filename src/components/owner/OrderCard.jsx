@@ -9,8 +9,9 @@ const ACTION_LABELS = {
   completed: "Mark completed",
 };
 
-export default function OrderCard({ order, nextStatus, onAdvance, advancing }) {
+export default function OrderCard({ order, nextStatus, onAdvance, advancing, riders, onAssignRider }) {
   const items = order.order_items || [];
+  const assignedRider = riders?.find((r) => r.id === order.rider_id);
 
   return (
     <div className="bg-white rounded-xl p-4 shadow-sm border border-ink/5">
@@ -39,6 +40,33 @@ export default function OrderCard({ order, nextStatus, onAdvance, advancing }) {
           </li>
         ))}
       </ul>
+
+      {order.order_type === "delivery" && !["delivered", "completed"].includes(order.status) && (
+        <div className="mb-3">
+          {assignedRider ? (
+            <p className="font-body text-xs text-ink/60">
+              Rider: <span className="font-semibold">{assignedRider.name}</span>
+            </p>
+          ) : (
+            <select
+              defaultValue=""
+              onChange={(e) => {
+                if (e.target.value) onAssignRider(order, e.target.value);
+              }}
+              className="w-full font-body text-xs border border-ink/15 rounded-lg px-2 py-1.5 text-ink"
+            >
+              <option value="" disabled>
+                Assign rider…
+              </option>
+              {(riders || []).map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name} ({r.status})
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+      )}
 
       <div className="flex items-center justify-between pt-2 border-t border-ink/10">
         <span className="font-ticket text-sm font-bold text-ink">₹{order.total_amount}</span>
