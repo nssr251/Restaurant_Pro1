@@ -1,0 +1,174 @@
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useParams } from "react-router-dom";
+import {
+  fetchRiderById,
+  fetchRiderActiveOrders,
+  subscribeToRiderOrders,
+  updateRiderLocation,
+  riderAdvanceOrder,
+} from "../lib/rider";
+
+export default function RiderPage() {
+  const { riderId } = useParams();
+  const [rider, setRider] = useState(null);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [tracking, setTracking] = useState(false);
+  const [locationError, setLocationError] = useState(null);
+  const watchIdRef = useRef(null);
+  const lastSentRef = useRef(0);
+
+  const load = useCallback(async () => {
+    try {
+      const [r, o] = await Promise.all([fetchRiderById(riderId), fetchRiderActiveOrders(riderId)]);
+      setRider(r);
+      setOrders(o);
+    } catch (err) {
+      setError(err.message || "Could not load your deliveries.");
+    } finally {
+      setLoading(false);
+    }
+  }, [riderId]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToRiderOrders(riderId, () => load());
+    return unsubscribe;
+  }, [riderId, load]);
+
+  // Start/stop GPS sharing based on whether any order is actively out for delivery
+  useEffect(() => {
+    const hasActiveDelivery = orders.some((o) => o.status === "out_for_delivery");
+
+    if (hasActiveDelivery && !watchIdRef.current) {
+      if (!navigator.geolocation) {
+        setLocationError("Location isn't supported on this device/browser.");
+        return;
+      }
+      watchIdRef.current = navigator.geolocation.watchPosition(
+        (pos) => {
+          const now = Date.now();
+          if (now - lastSentRef.current < 8000) return; // throttle to roughly every 8s
+          lastSentRef.current = now;
+          updateRiderLocation(riderId, pos.coords.latitude, pos.coords.longitude).catch(() => {});
+        },
+        () => setLocationError("Couldn't get your location. Please allow location access and reload."),
+        { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
+      );
+      setTracking(true);
+    }
+
+    if (!hasActiveDelivery && watchIdRef.current) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+      setTracking(false);
+    }
+
+    return () => {
+      if (watchIdRef.current) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
+    };
+  }, [orders, riderId]);
+
+  async function handleStartDelivery(order) {
+    try {
+      await riderAdvanceOrder(order.id, riderId, "out_for_delivery");
+      await load();
+    } catch (err) {
+      alert(err.message || "Could not start delivery.");
+    }
+  }
+
+  async function handleMarkDelivered(order) {
+    try {
+      await riderAdvanceOrder(order.id, riderId, "delivered");
+      await load();
+    } catch (err) {
+      alert(err.message || "Could not mark as delivered.");
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-ink flex items-center justify-center">
+        <p className="font-body text-paper/60">Loading…</p>
+      </div>
+    );
+  }
+
+  if (error || !rider) {
+    return (
+      <div className="min-h-screen bg-ink flex items-center justify-center px-6 text-center">
+        <p className="font-body text-paper/60">{error || "Rider not found."}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-ink px-5 py-8">
+      <h1 className="font-display text-2xl font-semibold text-paper mb-1">Hi, {rider.name}</h1>
+      <p className="font-body text-sm text-paper/50 mb-6">
+        {tracking ? "Sharing your location live" : "Not currently sharing location"}
+      </p>
+
+      {locationError && (
+        <p className="font-body text-xs text-chili bg-chili/10 rounded-lg px-3 py-2 mb-4">
+          {locationError}
+        </p>
+      )}
+
+      {orders.length === 0 && (
+        <p className="font-body text-paper/40 text-center py-10">No deliveries assigned right now.</p>
+      )}
+
+      <div className="space-y-4">
+        {orders.map((order) => (
+          <div key={order.id} className="bg-paper rounded-2xl p-4">
+            <p className="font-ticket text-xs text-ink/50 mb-1">#{order.id.slice(0, 8).toUpperCase()}</p>
+            <p className="font-body font-semibold text-ink">{order.customer_name}</p>
+            <p className="font-ticket text-sm text-ink/60 mb-2">{order.customer_phone}</p>
+            {order.delivery_address && (
+              <p className="font-body text-sm text-ink/70 mb-2">{order.delivery_address}</p>
+            )}
+            <ul className="font-body text-xs text-ink/60 space-y-0.5 mb-3">
+              {(order.order_items || []).map((it, i) => (
+                <li key={i}>
+                  {it.quantity} × {it.menu_items?.name || "Item"}
+                </li>
+              ))}
+            </ul>
+            <div className="flex items-center justify-between pt-2 border-t border-ink/10 mb-3">
+              <span className="font-body text-xs text-ink/50 uppercase tracking-wide">
+                {order.status.replace(/_/g, " ")}
+              </span>
+              <span className="font-ticket font-bold text-ink">₹{order.total_amount}</span>
+            </div>
+
+            {order.status === "ready" && (
+              <button
+                onClick={() => handleStartDelivery(order)}
+                className="w-full bg-turmeric text-ink font-body font-bold py-2.5 rounded-xl"
+              >
+                Start Delivery
+              </button>
+            )}
+            {order.status === "out_for_delivery" && (
+              <button
+                onClick={() => handleMarkDelivered(order)}
+                className="w-full bg-leaf text-paper font-body font-bold py-2.5 rounded-xl"
+              >
+                Mark Delivered
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
