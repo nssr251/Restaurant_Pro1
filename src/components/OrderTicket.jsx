@@ -1,4 +1,5 @@
 import { ORDER_STAGES, STAGE_LABELS } from "../lib/orders";
+import DeliveryMap from "./DeliveryMap";
 
 export default function OrderTicket({ order, rider, onNewOrder }) {
   const stages = ORDER_STAGES[order.order_type] || ORDER_STAGES.pickup;
@@ -8,6 +9,7 @@ export default function OrderTicket({ order, rider, onNewOrder }) {
   return (
     <div className="min-h-screen bg-ink flex flex-col items-center px-5 py-10">
       <div className="w-full max-w-sm bg-paper rounded-2xl overflow-hidden shadow-[0_12px_32px_rgba(0,0,0,0.4)]">
+        {/* Perforated header strip */}
         <div className="bg-ink text-paper px-6 py-5 relative">
           <p className="font-ticket text-xs text-paper/50 tracking-widest uppercase">Order Ticket</p>
           <p className="font-ticket text-2xl font-bold tracking-wider mt-1">#{shortId}</p>
@@ -59,6 +61,12 @@ export default function OrderTicket({ order, rider, onNewOrder }) {
               </p>
               <p className="font-body font-semibold text-ink">{rider.name}</p>
               {rider.phone && <p className="font-ticket text-sm text-ink/60">{rider.phone}</p>}
+
+              {rider.current_lat && rider.current_lng && (
+                <div className="mt-3">
+                  <DeliveryMap lat={rider.current_lat} lng={rider.current_lng} riderName={rider.name} />
+                </div>
+              )}
             </div>
           )}
 
