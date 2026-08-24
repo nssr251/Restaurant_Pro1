@@ -92,7 +92,7 @@ export default function CheckoutForm({ total, onBack, onSubmit, submitting }) {
           <span className="font-ticket font-bold text-ink text-lg">₹{total}</span>
         </div>
         <p className="font-body text-xs text-ink/50 -mt-3">
-          Pay at {orderType === "pickup" ? "counter" : "delivery"} for now — online payment coming soon.
+          We accept Cash on Delivery / Cash at counter only, for now. Online payments are coming soon.
         </p>
 
         <button
