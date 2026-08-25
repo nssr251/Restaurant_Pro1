@@ -46,6 +46,17 @@ export async function createOrder({ customerName, customerPhone, orderType, deli
   return order;
 }
 
+export async function fetchOrdersByPhone(phone) {
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*, riders(name, phone, current_lat, current_lng)")
+    .eq("customer_phone", phone)
+    .order("created_at", { ascending: false })
+    .limit(10);
+  if (error) throw error;
+  return data;
+}
+
 export async function fetchOrder(orderId) {
   const { data, error } = await supabase
     .from("orders")
@@ -56,6 +67,7 @@ export async function fetchOrder(orderId) {
   return data;
 }
 
+// Subscribe to live updates for a single order (status changes, rider assignment)
 export function subscribeToOrder(orderId, onChange) {
   const channel = supabase
     .channel(`order-${orderId}`)
@@ -69,6 +81,7 @@ export function subscribeToOrder(orderId, onChange) {
   return () => supabase.removeChannel(channel);
 }
 
+// Subscribe to a rider's live location while an order is out for delivery
 export function subscribeToRider(riderId, onChange) {
   if (!riderId) return () => {};
   const channel = supabase
