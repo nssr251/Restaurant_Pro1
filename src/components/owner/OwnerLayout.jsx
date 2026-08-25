@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { signOut } from "../../lib/auth";
 import { useOwnerOrders } from "../../hooks/useOwnerOrders";
 import { requestNotificationPermission } from "../../lib/sound";
+import { FEATURES } from "../../config";
 
 export default function OwnerLayout() {
   const navigate = useNavigate();
@@ -19,9 +20,9 @@ export default function OwnerLayout() {
   const NAV_ITEMS = [
     { to: "/owner", label: "Dashboard", end: true, badge: null },
     { to: "/owner/orders", label: "Orders", badge: newOrdersCount > 0 ? newOrdersCount : null },
-    { to: "/owner/menu", label: "Menu", badge: null },
-    { to: "/owner/riders", label: "Riders", badge: null },
-  ];
+    FEATURES.menuManagement && { to: "/owner/menu", label: "Menu", badge: null },
+    FEATURES.riderTracking && { to: "/owner/riders", label: "Riders", badge: null },
+  ].filter(Boolean);
 
   async function handleLogout() {
     await signOut();
