@@ -12,7 +12,7 @@ export const RESTAURANT_DEFAULTS = {
 // Flip these to `true` and redeploy whenever you're ready to turn a
 // feature on — nothing else needs to change in the code.
 export const FEATURES = {
-  menuManagement: false, // Owner's "Menu" tab (add/edit/delete items in-app)
+  menuManagement: true, // Owner's "Menu" tab (add/edit/delete items in-app)
   riderTracking: false, // Rider assignment + live delivery map
 };
  
