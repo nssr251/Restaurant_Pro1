@@ -1,6 +1,6 @@
 import { isRestaurantOpen, formatTime } from "../lib/hours";
 
-export default function WelcomeScreen({ restaurantInfo, onEnter }) {
+export default function WelcomeScreen({ restaurantInfo, onEnter, onTrack }) {
   const open = isRestaurantOpen(restaurantInfo.opens_at, restaurantInfo.closes_at);
   const hasHours = restaurantInfo.opens_at && restaurantInfo.closes_at;
   const mapsUrl = restaurantInfo.address
@@ -13,11 +13,11 @@ export default function WelcomeScreen({ restaurantInfo, onEnter }) {
         <img
           src={restaurantInfo.logo_url}
           alt={restaurantInfo.name}
-          className="w-24 h-24 rounded-full object-cover mb-5 border-2 border-turmeric/40"
+          className="w-40 h-40 rounded-full object-cover mb-5 border-4 border-turmeric/40"
         />
       ) : (
-        <div className="w-24 h-24 rounded-full bg-paper/10 border-2 border-turmeric/40 flex items-center justify-center mb-5">
-          <span className="font-display text-3xl text-turmeric">{restaurantInfo.name?.charAt(0)}</span>
+        <div className="w-40 h-40 rounded-full bg-paper/10 border-4 border-turmeric/40 flex items-center justify-center mb-5">
+          <span className="font-display text-5xl text-turmeric">{restaurantInfo.name?.charAt(0)}</span>
         </div>
       )}
 
@@ -63,6 +63,13 @@ export default function WelcomeScreen({ restaurantInfo, onEnter }) {
           </a>
         )}
       </div>
+
+      <button
+        onClick={onTrack}
+        className="mt-6 font-body text-xs text-paper/40 underline underline-offset-2"
+      >
+        Already ordered? Track your order
+      </button>
     </div>
   );
 }
