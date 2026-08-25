@@ -6,6 +6,7 @@ import MenuList from "./components/MenuList";
 import CartSheet, { CartPill } from "./components/CartSheet";
 import CheckoutForm from "./components/CheckoutForm";
 import OrderTicket from "./components/OrderTicket";
+import TrackOrderSearch from "./components/TrackOrderSearch";
 import { fetchMenu, fetchRestaurantInfo } from "./lib/menu";
 import { createOrder, fetchOrder, subscribeToOrder, subscribeToRider } from "./lib/orders";
 import { useCart } from "./hooks/useCart";
@@ -31,7 +32,7 @@ export default function CustomerApp() {
       try {
         const [menu, info] = await Promise.all([fetchMenu(), fetchRestaurantInfo()]);
         setMenuByCategory(menu);
-       setRestaurantInfo({ ...info, tagline: info.tagline || RESTAURANT_DEFAULTS.tagline });
+        setRestaurantInfo({ ...info, tagline: info.tagline || RESTAURANT_DEFAULTS.tagline });
         setActiveCategory(Object.keys(menu)[0] || null);
       } catch (err) {
         setLoadError(err.message || "Could not load the menu. Check your connection.");
@@ -98,6 +99,7 @@ export default function CustomerApp() {
   if (view === "tracking" && order) {
     return <OrderTicket order={order} rider={order.riders || rider} onNewOrder={handleNewOrder} />;
   }
+
   if (view === "checkout") {
     return (
       <CheckoutForm
@@ -110,7 +112,26 @@ export default function CustomerApp() {
   }
 
   if (view === "welcome") {
-    return <WelcomeScreen restaurantInfo={restaurantInfo} onEnter={() => setView("menu")} />;
+    return (
+      <WelcomeScreen
+        restaurantInfo={restaurantInfo}
+        onEnter={() => setView("menu")}
+        onTrack={() => setView("trackSearch")}
+      />
+    );
+  }
+
+  if (view === "trackSearch") {
+    return (
+      <TrackOrderSearch
+        onBack={() => setView("welcome")}
+        onSelectOrder={(found) => {
+          localStorage.setItem(ACTIVE_ORDER_KEY, found.id);
+          setOrder(found);
+          setView("tracking");
+        }}
+      />
+    );
   }
 
   if (loading) {
