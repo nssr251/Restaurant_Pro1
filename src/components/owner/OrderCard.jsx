@@ -1,5 +1,6 @@
 import { STAGE_LABELS } from "../../lib/orders";
 import { timeAgo } from "../../lib/time";
+import { FEATURES } from "../../config";
 
 const ACTION_LABELS = {
   preparing: "Start preparing",
@@ -41,7 +42,9 @@ export default function OrderCard({ order, nextStatus, onAdvance, advancing, rid
         ))}
       </ul>
 
-      {order.order_type === "delivery" && !["delivered", "completed"].includes(order.status) && (
+      {FEATURES.riderTracking &&
+        order.order_type === "delivery" &&
+        !["delivered", "completed"].includes(order.status) && (
         <div className="mb-3">
           {assignedRider ? (
             <p className="font-body text-xs text-ink/60">
