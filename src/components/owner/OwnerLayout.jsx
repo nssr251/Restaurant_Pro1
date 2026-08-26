@@ -1,8 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { signOut } from "../../lib/auth";
 import { useOwnerOrders } from "../../hooks/useOwnerOrders";
 import { requestNotificationPermission } from "../../lib/sound";
+import { fetchAcceptingOrders, setAcceptingOrders } from "../../lib/ownerSettings";
 import { FEATURES } from "../../config";
 
 export default function OwnerLayout() {
@@ -10,6 +11,19 @@ export default function OwnerLayout() {
   const ownerOrdersState = useOwnerOrders();
   const { orders, notificationPermission, setNotificationPermission } = ownerOrdersState;
   const newOrdersCount = orders.filter((o) => o.status === "received").length;
+
+  const [accepting, setAccepting] = useState(true);
+  const [togglingAccepting, setTogglingAccepting] = useState(false);
+  const [acceptingLoaded, setAcceptingLoaded] = useState(false);
+
+  useEffect(() => {
+    fetchAcceptingOrders()
+      .then((value) => {
+        setAccepting(value);
+        setAcceptingLoaded(true);
+      })
+      .catch(() => setAcceptingLoaded(true));
+  }, []);
 
   // Reliable indicator that doesn't depend on notification permission at all —
   // shows the unread count right in the browser tab, visible even on another tab/app
@@ -34,12 +48,57 @@ export default function OwnerLayout() {
     setNotificationPermission(result);
   }
 
+  async function handleToggleAccepting() {
+    const next = !accepting;
+    setTogglingAccepting(true);
+    setAccepting(next); // optimistic — feels instant on a one-tap control
+    try {
+      await setAcceptingOrders(next);
+    } catch (err) {
+      setAccepting(!next); // revert on failure
+      alert(err.message || "Could not update this. Please try again.");
+    } finally {
+      setTogglingAccepting(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-paper-dim flex">
       <aside className="w-56 bg-ink text-paper flex flex-col shrink-0">
         <div className="px-5 py-6">
           <p className="font-display text-lg font-semibold">Owner Panel</p>
         </div>
+
+        {acceptingLoaded && (
+          <button
+            onClick={handleToggleAccepting}
+            disabled={togglingAccepting}
+            className={
+              "mx-3 mb-4 px-3 py-3 rounded-xl font-body text-sm font-semibold text-left transition-colors disabled:opacity-60 " +
+              (accepting ? "bg-leaf/20 text-leaf" : "bg-chili/20 text-chili")
+            }
+          >
+            <div className="flex items-center justify-between">
+              <span>{accepting ? "Accepting Orders" : "Orders Paused"}</span>
+              <span
+                className={
+                  "inline-block w-9 h-5 rounded-full relative transition-colors " +
+                  (accepting ? "bg-leaf" : "bg-ink/30")
+                }
+              >
+                <span
+                  className={
+                    "absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform " +
+                    (accepting ? "translate-x-4" : "translate-x-0.5")
+                  }
+                />
+              </span>
+            </div>
+            <p className="font-body text-[11px] font-normal mt-1 opacity-80">
+              {accepting ? "Tap to pause new orders" : "Customers see \"not taking orders\""}
+            </p>
+          </button>
+        )}
 
         <nav className="flex-1 px-3 space-y-1">
           {NAV_ITEMS.map((item) => (
