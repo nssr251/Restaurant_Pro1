@@ -18,6 +18,12 @@ export default function CustomerApp() {
   const [view, setView] = useState("welcome");
   const [menuByCategory, setMenuByCategory] = useState({});
   const [restaurantInfo, setRestaurantInfo] = useState(RESTAURANT_DEFAULTS);
+
+  useEffect(() => {
+    if (restaurantInfo.name) {
+      document.title = restaurantInfo.name;
+    }
+  }, [restaurantInfo.name]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [activeCategory, setActiveCategory] = useState(null);
