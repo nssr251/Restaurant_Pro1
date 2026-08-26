@@ -1,7 +1,9 @@
 import { isRestaurantOpen, formatTime } from "../lib/hours";
 
 export default function WelcomeScreen({ restaurantInfo, onEnter, onTrack }) {
-  const open = isRestaurantOpen(restaurantInfo.opens_at, restaurantInfo.closes_at);
+  const manuallyPaused = restaurantInfo.accepting_orders === false;
+  const withinHours = isRestaurantOpen(restaurantInfo.opens_at, restaurantInfo.closes_at);
+  const open = !manuallyPaused && withinHours;
   const hasHours = restaurantInfo.opens_at && restaurantInfo.closes_at;
   const mapsUrl = restaurantInfo.address
     ? "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(restaurantInfo.address)
@@ -27,7 +29,7 @@ export default function WelcomeScreen({ restaurantInfo, onEnter, onTrack }) {
         <p className="font-body text-paper/60 text-sm mb-2">{restaurantInfo.tagline}</p>
       )}
 
-      {hasHours && (
+      {hasHours && !manuallyPaused && (
         <p className="font-body text-paper/40 text-xs mb-6">
           {open ? "Open now" : "Closed"} · {formatTime(restaurantInfo.opens_at)} – {formatTime(restaurantInfo.closes_at)}
         </p>
@@ -42,7 +44,9 @@ export default function WelcomeScreen({ restaurantInfo, onEnter, onTrack }) {
         </button>
       ) : (
         <div className="bg-paper/10 border border-paper/20 rounded-xl px-6 py-4 max-w-xs">
-          <p className="font-body font-semibold text-chili">We're currently closed</p>
+          <p className="font-body font-semibold text-chili">
+            {manuallyPaused ? "We're not taking orders right now" : "We're currently closed"}
+          </p>
         </div>
       )}
 
