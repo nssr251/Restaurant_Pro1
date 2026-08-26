@@ -15,6 +15,16 @@ export const STAGE_LABELS = {
 };
 
 export async function createOrder({ customerName, customerPhone, orderType, deliveryAddress, cart }) {
+  const { data: info, error: infoError } = await supabase
+    .from("restaurant_info")
+    .select("accepting_orders")
+    .eq("id", 1)
+    .single();
+  if (infoError) throw infoError;
+  if (info.accepting_orders === false) {
+    throw new Error("We're not taking orders right now. Please check back shortly.");
+  }
+
   const totalAmount = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
   const { data: order, error: orderError } = await supabase
