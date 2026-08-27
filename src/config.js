@@ -13,6 +13,6 @@ export const RESTAURANT_DEFAULTS = {
 // feature on — nothing else needs to change in the code.
 export const FEATURES = {
   menuManagement: true, // Owner's "Menu" tab (add/edit/delete items in-app)
-  riderTracking: false, // Rider assignment + live delivery map
+  riderTracking: true, // Rider assignment + live delivery map
 };
  
