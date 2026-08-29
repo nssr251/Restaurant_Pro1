@@ -21,6 +21,7 @@ export async function createOrder({
   deliveryAddress,
   deliveryLat,
   deliveryLng,
+  paymentMethod,
   cart,
 }) {
   const { data: info, error: infoError } = await supabase
@@ -46,7 +47,7 @@ export async function createOrder({
       delivery_lng: orderType === "delivery" ? deliveryLng : null,
       total_amount: totalAmount,
       status: "received",
-      payment_status: "pay_later",
+      payment_status: paymentMethod === "upi" ? "awaiting_confirmation" : "pay_later",
     })
     .select()
     .single();
