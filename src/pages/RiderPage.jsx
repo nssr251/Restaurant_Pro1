@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import {
   fetchRiderById,
   fetchRiderActiveOrders,
+  fetchRiderDeliveryHistory,
   subscribeToRiderOrders,
   updateRiderLocation,
   riderAdvanceOrder,
@@ -31,7 +32,7 @@ function RiderOrderCard({ order, riderLat, riderLng, onStartDelivery, onMarkDeli
       <p className="font-body font-semibold text-ink">{order.customer_name}</p>
       <p className="font-ticket text-sm text-ink/60 mb-2">{order.customer_phone}</p>
       {order.delivery_address && (
-        <p className="font-body text-sm text-ink/70 mb-1">{order.delivery_address}</p>
+        <p className="font-body text-sm text-ink/70 mb-1 line-clamp-2">{order.delivery_address}</p>
       )}
 
       {routeInfo && (
@@ -96,6 +97,43 @@ function RiderOrderCard({ order, riderLat, riderLng, onStartDelivery, onMarkDeli
   );
 }
 
+function formatDuration(fromIso, toIso) {
+  if (!fromIso || !toIso) return null;
+  const mins = Math.round((new Date(toIso) - new Date(fromIso)) / 60000);
+  if (mins < 1) return "under a minute";
+  if (mins < 60) return mins + " min";
+  return Math.floor(mins / 60) + " hr " + (mins % 60) + " min";
+}
+
+function DeliveryHistory({ history }) {
+  if (history.length === 0) {
+    return <p className="font-body text-paper/40 text-sm py-4">No completed deliveries yet.</p>;
+  }
+  return (
+    <div className="space-y-2">
+      {history.map((order) => {
+        const duration = formatDuration(order.ready_at || order.created_at, order.delivered_at);
+        return (
+          <div key={order.id} className="bg-paper rounded-xl p-3 flex items-center justify-between">
+            <div>
+              <p className="font-body text-sm font-medium text-ink">{order.customer_name}</p>
+              <p className="font-body text-xs text-ink/50">
+                {new Date(order.delivered_at).toLocaleString()}
+              </p>
+            </div>
+            <div className="text-right">
+              {duration && (
+                <p className="font-ticket text-xs font-semibold text-leaf">{duration}</p>
+              )}
+              <p className="font-ticket text-xs text-ink/50">₹{order.total_amount}</p>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function RiderPage() {
   const { riderId } = useParams();
   const [rider, setRider] = useState(null);
@@ -105,6 +143,9 @@ export default function RiderPage() {
   const [tracking, setTracking] = useState(false);
   const [locationError, setLocationError] = useState(null);
   const [riderPosition, setRiderPosition] = useState({ lat: null, lng: null });
+  const [history, setHistory] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const watchIdRef = useRef(null);
   const lastSentRef = useRef(0);
   const knownOrderIdsRef = useRef(new Set());
@@ -190,6 +231,21 @@ export default function RiderPage() {
     };
   }, [orders, riderId]);
 
+  async function loadHistory() {
+    if (historyLoaded) {
+      setShowHistory((v) => !v);
+      return;
+    }
+    try {
+      const data = await fetchRiderDeliveryHistory(riderId);
+      setHistory(data);
+      setHistoryLoaded(true);
+      setShowHistory(true);
+    } catch {
+      alert("Could not load delivery history.");
+    }
+  }
+
   async function handleStartDelivery(order) {
     try {
       await riderAdvanceOrder(order.id, riderId, "out_for_delivery");
@@ -253,6 +309,19 @@ export default function RiderPage() {
           />
         ))}
       </div>
+
+      <button
+        onClick={loadHistory}
+        className="w-full mt-8 font-body text-sm text-paper/60 underline underline-offset-2"
+      >
+        {showHistory ? "Hide" : "View"} my delivery history
+      </button>
+
+      {showHistory && (
+        <div className="mt-4">
+          <DeliveryHistory history={history} />
+        </div>
+      )}
     </div>
   );
 }
