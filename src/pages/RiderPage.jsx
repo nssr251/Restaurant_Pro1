@@ -8,7 +8,7 @@ import {
   updateRiderLocation,
   riderAdvanceOrder,
 } from "../lib/rider";
-import { playAlertSound, requestNotificationPermission, showNotification } from "../lib/sound";
+import { playAlertSound, unlockAlerts, getNotificationPermission, showNotification } from "../lib/sound";
 import { useRouteInfo } from "../hooks/useRouteInfo";
 import DeliveryMap from "../components/DeliveryMap";
 
@@ -146,6 +146,7 @@ export default function RiderPage() {
   const [history, setHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [alertPermission, setAlertPermission] = useState(getNotificationPermission());
   const watchIdRef = useRef(null);
   const lastSentRef = useRef(0);
   const knownOrderIdsRef = useRef(new Set());
@@ -180,10 +181,6 @@ export default function RiderPage() {
   useEffect(() => {
     load();
   }, [load]);
-
-  useEffect(() => {
-    requestNotificationPermission();
-  }, []);
 
   useEffect(() => {
     const unsubscribe = subscribeToRiderOrders(riderId, () => load());
@@ -246,6 +243,11 @@ export default function RiderPage() {
     }
   }
 
+  async function handleEnableAlerts() {
+    const result = await unlockAlerts();
+    setAlertPermission(result);
+  }
+
   async function handleStartDelivery(order) {
     try {
       await riderAdvanceOrder(order.id, riderId, "out_for_delivery");
@@ -283,9 +285,20 @@ export default function RiderPage() {
   return (
     <div className="min-h-screen bg-ink px-5 py-8">
       <h1 className="font-display text-2xl font-semibold text-paper mb-1">Hi, {rider.name}</h1>
-      <p className="font-body text-sm text-paper/50 mb-6">
+      <p className="font-body text-sm text-paper/50 mb-4">
         {tracking ? "Sharing your location live" : "Not currently sharing location"}
       </p>
+
+      {alertPermission !== "granted" && alertPermission !== "unsupported" && (
+        <button
+          onClick={handleEnableAlerts}
+          className="w-full mb-4 font-body text-sm font-semibold bg-turmeric/20 text-turmeric border border-turmeric/30 rounded-xl py-2.5"
+        >
+          {alertPermission === "denied"
+            ? "Notifications blocked — check browser site settings"
+            : "🔔 Enable sound & notifications for new orders"}
+        </button>
+      )}
 
       {locationError && (
         <p className="font-body text-xs text-chili bg-chili/10 rounded-lg px-3 py-2 mb-4">
