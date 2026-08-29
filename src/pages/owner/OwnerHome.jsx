@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
+import QRCode from "qrcode";
 import { STAGE_LABELS } from "../../lib/orders";
 
 function toLocalDateStr(dateInput) {
@@ -22,6 +23,14 @@ export default function OwnerHome() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [expandedId, setExpandedId] = useState(null);
+  const [appQrUrl, setAppQrUrl] = useState(null);
+  const [showAppQr, setShowAppQr] = useState(false);
+
+  useEffect(() => {
+    QRCode.toDataURL(window.location.origin, { width: 200, margin: 1 })
+      .then(setAppQrUrl)
+      .catch(() => setAppQrUrl(null));
+  }, []);
 
   const isViewingToday = selectedDate === todayStr();
   const dayOrders = orders.filter((o) => toLocalDateStr(o.created_at) === selectedDate);
@@ -54,8 +63,28 @@ export default function OwnerHome() {
             onChange={(e) => setSelectedDate(e.target.value)}
             className="font-body text-sm bg-white border border-ink/15 rounded-lg px-3 py-1.5 text-ink"
           />
+          <button
+            onClick={() => setShowAppQr((v) => !v)}
+            className="font-body text-xs font-semibold text-ink border border-ink/20 rounded-lg px-3 py-1.5 hover:bg-paper-dim transition-colors"
+          >
+            📱 {showAppQr ? "Hide" : "Share App QR"}
+          </button>
         </div>
       </div>
+
+      {showAppQr && (
+        <div className="bg-white rounded-xl p-5 shadow-sm border border-ink/5 mb-6 text-center max-w-xs">
+          {appQrUrl ? (
+            <img src={appQrUrl} alt="Customer app QR code" className="mx-auto rounded-lg" />
+          ) : (
+            <p className="font-body text-xs text-ink/40">Generating QR…</p>
+          )}
+          <p className="font-body text-xs text-ink/50 mt-2">
+            Print this for tables/counter. It always points to your current app — no need to
+            regenerate it later.
+          </p>
+        </div>
+      )}
 
       {loading ? (
         <p className="font-body text-ink/60">Loading numbers…</p>
