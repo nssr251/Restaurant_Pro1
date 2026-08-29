@@ -1,45 +1,32 @@
 import { useState } from "react";
+import LocationPicker from "./LocationPicker";
 
-export default function CheckoutForm({ total, onBack, onSubmit, submitting }) {
+export default function CheckoutForm({ total, onBack, onSubmit, submitting, upiAvailable }) {
   const [orderType, setOrderType] = useState("pickup");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [deliveryLat, setDeliveryLat] = useState(null);
   const [deliveryLng, setDeliveryLng] = useState(null);
-  const [locating, setLocating] = useState(false);
-  const [locationError, setLocationError] = useState(null);
+  const [paymentMethod, setPaymentMethod] = useState("cod");
 
   const isValid =
     customerName.trim().length > 1 &&
     customerPhone.trim().length >= 10 &&
     (orderType === "pickup" || deliveryAddress.trim().length > 4);
 
-  function handleUseMyLocation() {
-    if (!navigator.geolocation) {
-      setLocationError("Location isn't supported on this device/browser.");
-      return;
-    }
-    setLocating(true);
-    setLocationError(null);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setDeliveryLat(pos.coords.latitude);
-        setDeliveryLng(pos.coords.longitude);
-        setLocating(false);
-      },
-      () => {
-        setLocationError("Couldn't get your location. You can still type your address below.");
-        setLocating(false);
-      },
-      { enableHighAccuracy: true, timeout: 15000 }
-    );
-  }
-
   function handleSubmit(e) {
     e.preventDefault();
     if (!isValid) return;
-    onSubmit({ customerName, customerPhone, orderType, deliveryAddress, deliveryLat, deliveryLng });
+    onSubmit({
+      customerName,
+      customerPhone,
+      orderType,
+      deliveryAddress,
+      deliveryLat,
+      deliveryLng,
+      paymentMethod,
+    });
   }
 
   return (
@@ -60,11 +47,12 @@ export default function CheckoutForm({ total, onBack, onSubmit, submitting }) {
                 type="button"
                 key={type}
                 onClick={() => setOrderType(type)}
-                className={`flex-1 py-2.5 rounded-xl font-body font-semibold capitalize border transition-colors ${
-                  orderType === type
+                className={
+                  "flex-1 py-2.5 rounded-xl font-body font-semibold capitalize border transition-colors " +
+                  (orderType === type
                     ? "bg-ink text-paper border-ink"
-                    : "bg-transparent text-ink border-ink/20"
-                }`}
+                    : "bg-transparent text-ink border-ink/20")
+                }
               >
                 {type}
               </button>
@@ -100,45 +88,79 @@ export default function CheckoutForm({ total, onBack, onSubmit, submitting }) {
         {orderType === "delivery" && (
           <div>
             <label className="font-body text-xs font-semibold text-ink/60 uppercase tracking-wide">
-              Delivery address
+              Delivery address (for reference)
             </label>
             <textarea
               value={deliveryAddress}
               onChange={(e) => setDeliveryAddress(e.target.value)}
               className="w-full mt-1.5 bg-white border border-ink/15 rounded-xl px-4 py-3 font-body text-ink"
-              rows={3}
+              rows={2}
               placeholder="House/flat no., street, landmark"
             />
-            <button
-              type="button"
-              onClick={handleUseMyLocation}
-              disabled={locating}
-              className="mt-2 font-body text-xs font-semibold text-leaf underline underline-offset-2 disabled:opacity-50"
-            >
-              {locating
-                ? "Getting your location…"
-                : deliveryLat
-                ? "✓ Exact location captured — helps the rider find you faster"
-                : "📍 Use my current location (recommended)"}
-            </button>
-            {locationError && <p className="font-body text-xs text-chili mt-1">{locationError}</p>}
+
+            <label className="font-body text-xs font-semibold text-ink/60 uppercase tracking-wide mt-4 block mb-1.5">
+              Pin your exact delivery spot
+            </label>
+            <LocationPicker
+              lat={deliveryLat}
+              lng={deliveryLng}
+              onChange={(lat, lng) => {
+                setDeliveryLat(lat);
+                setDeliveryLng(lng);
+              }}
+            />
           </div>
         )}
 
+        <div>
+          <label className="font-body text-xs font-semibold text-ink/60 uppercase tracking-wide">
+            Payment
+          </label>
+          <div className="flex gap-2 mt-2">
+            <button
+              type="button"
+              onClick={() => setPaymentMethod("cod")}
+              className={
+                "flex-1 py-2.5 rounded-xl font-body font-semibold border transition-colors " +
+                (paymentMethod === "cod"
+                  ? "bg-ink text-paper border-ink"
+                  : "bg-transparent text-ink border-ink/20")
+              }
+            >
+              Cash {orderType === "pickup" ? "at counter" : "on delivery"}
+            </button>
+            {upiAvailable && (
+              <button
+                type="button"
+                onClick={() => setPaymentMethod("upi")}
+                className={
+                  "flex-1 py-2.5 rounded-xl font-body font-semibold border transition-colors " +
+                  (paymentMethod === "upi"
+                    ? "bg-ink text-paper border-ink"
+                    : "bg-transparent text-ink border-ink/20")
+                }
+              >
+                Pay Now (UPI)
+              </button>
+            )}
+          </div>
+        </div>
+
         <div className="flex items-center justify-between pt-2 border-t border-ink/10">
-          <span className="font-body font-semibold text-ink">Total to pay</span>
+          <span className="font-body font-semibold text-ink">Total</span>
           <span className="font-ticket font-bold text-ink text-lg">₹{total}</span>
         </div>
-        <p className="font-body text-xs text-ink/50 -mt-3">
-          We accept Cash on Delivery / Cash at counter only, for now. Online payments are coming soon.
-        </p>
 
         <button
           type="submit"
           disabled={!isValid || submitting}
           className="w-full bg-turmeric text-ink font-body font-bold py-3.5 rounded-xl disabled:opacity-40 hover:bg-turmeric-dark transition-colors"
         >
-          {submitting ? "Placing order…" : "Place order"}
+          {submitting
+            ? "Placing order…"
+            : paymentMethod === "upi"
+            ? "Continue to Payment"
+            : "Place Order"}
         </button>
       </form>
     </div>
