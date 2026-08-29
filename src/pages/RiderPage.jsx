@@ -152,7 +152,11 @@ export default function RiderPage() {
           const now = Date.now();
           if (now - lastSentRef.current < 8000) return; // throttle to roughly every 8s
           lastSentRef.current = now;
-          updateRiderLocation(riderId, pos.coords.latitude, pos.coords.longitude).catch(() => {});
+          updateRiderLocation(riderId, pos.coords.latitude, pos.coords.longitude).catch((err) => {
+            setLocationError(
+              "Location isn't saving (" + (err.message || "unknown error") + "). Tell the restaurant."
+            );
+          });
         },
         () => setLocationError("Couldn't get your location. Please allow location access and reload."),
         { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
