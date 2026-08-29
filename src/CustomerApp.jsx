@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Header from "./components/Header";
+import MenuSearchBar from "./components/MenuSearchBar";
 import WelcomeScreen from "./components/WelcomeScreen";
 import CategoryTabs from "./components/CategoryTabs";
 import MenuList from "./components/MenuList";
@@ -9,15 +10,31 @@ import OrderTicket from "./components/OrderTicket";
 import TrackOrderSearch from "./components/TrackOrderSearch";
 import PaymentScreen from "./components/PaymentScreen";
 import { fetchMenu, fetchRestaurantInfo } from "./lib/menu";
-import { createOrder, fetchOrder, subscribeToOrder, subscribeToRider } from "./lib/orders";
+import { createOrder, fetchOrder, subscribeToOrder, subscribeToRider, STAGE_LABELS } from "./lib/orders";
+import { playAlertSound, requestNotificationPermission, showNotification } from "./lib/sound";
 import { useCart } from "./hooks/useCart";
 import { RESTAURANT_DEFAULTS } from "./config";
 
 const ACTIVE_ORDER_KEY = "restaurant_active_order_id";
 
+function filterMenuBySearch(menuByCategory, search) {
+  const term = search.trim().toLowerCase();
+  const filtered = {};
+  for (const [category, items] of Object.entries(menuByCategory)) {
+    const matches = items.filter(
+      (item) =>
+        item.name.toLowerCase().includes(term) ||
+        (item.description || "").toLowerCase().includes(term)
+    );
+    if (matches.length > 0) filtered[category] = matches;
+  }
+  return filtered;
+}
+
 export default function CustomerApp() {
   const [view, setView] = useState("welcome");
   const [menuByCategory, setMenuByCategory] = useState({});
+  const [menuSearch, setMenuSearch] = useState("");
   const [restaurantInfo, setRestaurantInfo] = useState(RESTAURANT_DEFAULTS);
 
   useEffect(() => {
@@ -69,8 +86,19 @@ export default function CustomerApp() {
 
   useEffect(() => {
     if (!order?.id) return;
+    requestNotificationPermission();
     const unsubscribe = subscribeToOrder(order.id, (updated) => {
-      setOrder((prev) => ({ ...prev, ...updated }));
+      setOrder((prev) => {
+        if (prev && updated.status && updated.status !== prev.status) {
+          playAlertSound("doorbell");
+          showNotification(
+            "Order update",
+            STAGE_LABELS[updated.status] || "Your order status changed",
+            "customer-order-" + order.id
+          );
+        }
+        return { ...prev, ...updated };
+      });
     });
     return unsubscribe;
   }, [order?.id]);
@@ -178,15 +206,28 @@ export default function CustomerApp() {
   return (
     <div className="min-h-screen bg-ink">
       <Header name={restaurantInfo.name} tagline={restaurantInfo.tagline} />
-      <CategoryTabs
-        categories={Object.keys(menuByCategory)}
-        active={activeCategory}
-        onSelect={(cat) => {
-          setActiveCategory(cat);
-          document.getElementById(`cat-${cat}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
-        }}
-      />
-      <MenuList menuByCategory={menuByCategory} cart={cart} onAdd={addItem} onDecrement={decrementItem} />
+      <MenuSearchBar value={menuSearch} onChange={setMenuSearch} />
+
+      {menuSearch.trim() ? (
+        <MenuList
+          menuByCategory={filterMenuBySearch(menuByCategory, menuSearch)}
+          cart={cart}
+          onAdd={addItem}
+          onDecrement={decrementItem}
+        />
+      ) : (
+        <>
+          <CategoryTabs
+            categories={Object.keys(menuByCategory)}
+            active={activeCategory}
+            onSelect={(cat) => {
+              setActiveCategory(cat);
+              document.getElementById(`cat-${cat}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
+          />
+          <MenuList menuByCategory={menuByCategory} cart={cart} onAdd={addItem} onDecrement={decrementItem} />
+        </>
+      )}
 
       <CartPill itemCount={itemCount} total={total} onOpen={() => setView("cart")} />
 
