@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { fetchAllMenuItems, deleteMenuItem } from "../../lib/ownerMenu";
+import { fetchAllMenuItems, deleteMenuItem, hideMenuItem } from "../../lib/ownerMenu";
 import { formatTime } from "../../lib/timeWindow";
 import MenuItemForm from "../../components/owner/MenuItemForm";
 
@@ -53,7 +53,22 @@ export default function OwnerMenu() {
       await deleteMenuItem(item.id);
       await loadItems();
     } catch (err) {
-      alert(err.message || "Could not delete the item.");
+      if (err.code === "23503") {
+        const hideInstead = window.confirm(
+          '"' + item.name + '" has past orders referencing it, so it can\'t be deleted — ' +
+          "this would break your order history. Hide it from customers instead?"
+        );
+        if (hideInstead) {
+          try {
+            await hideMenuItem(item.id);
+            await loadItems();
+          } catch (hideErr) {
+            alert(hideErr.message || "Could not hide the item.");
+          }
+        }
+      } else {
+        alert(err.message || "Could not delete the item.");
+      }
     }
   }
 
