@@ -29,6 +29,18 @@ export function subscribeToRiderOrders(riderId, onChange) {
   return () => supabase.removeChannel(channel);
 }
 
+export async function fetchRiderDeliveryHistory(riderId) {
+  const { data, error } = await supabase
+    .from("orders")
+    .select("id, customer_name, total_amount, ready_at, delivered_at, created_at")
+    .eq("rider_id", riderId)
+    .eq("status", "delivered")
+    .order("delivered_at", { ascending: false })
+    .limit(20);
+  if (error) throw error;
+  return data;
+}
+
 export async function updateRiderLocation(riderId, lat, lng) {
   const { error } = await supabase.rpc("update_rider_location", {
     p_rider_id: riderId,
