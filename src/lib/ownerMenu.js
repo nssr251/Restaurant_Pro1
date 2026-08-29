@@ -34,6 +34,11 @@ export async function deleteMenuItem(id) {
   if (error) throw error;
 }
 
+export async function hideMenuItem(id) {
+  const { error } = await supabase.from("menu_items").update({ is_available: false }).eq("id", id);
+  if (error) throw error;
+}
+
 export async function uploadMenuImage(file) {
   const fileExt = file.name.split(".").pop();
   const fileName = crypto.randomUUID() + "." + fileExt;
