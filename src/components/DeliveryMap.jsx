@@ -19,9 +19,9 @@ function Recenter({ lat, lng }) {
   return null;
 }
 
-export default function DeliveryMap({ lat, lng, riderName }) {
+export default function DeliveryMap({ lat, lng, riderName, height = 220 }) {
   return (
-    <div className="rounded-xl overflow-hidden" style={{ height: "220px" }}>
+    <div className="rounded-xl overflow-hidden" style={{ height: height + "px" }}>
       <MapContainer
         center={[lat, lng]}
         zoom={15}
