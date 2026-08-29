@@ -1,10 +1,18 @@
 import { ORDER_STAGES, STAGE_LABELS } from "../lib/orders";
 import DeliveryMap from "./DeliveryMap";
+import { useRouteInfo } from "../hooks/useRouteInfo";
 
 export default function OrderTicket({ order, rider, onNewOrder }) {
   const stages = ORDER_STAGES[order.order_type] || ORDER_STAGES.pickup;
   const currentIndex = stages.indexOf(order.status);
   const shortId = order.id.slice(0, 8).toUpperCase();
+
+  const { info: routeInfo } = useRouteInfo(
+    rider?.current_lat,
+    rider?.current_lng,
+    order.delivery_lat,
+    order.delivery_lng
+  );
 
   return (
     <div className="min-h-screen bg-ink flex flex-col items-center px-5 py-10">
@@ -66,6 +74,14 @@ export default function OrderTicket({ order, rider, onNewOrder }) {
                 <div className="mt-3">
                   <DeliveryMap lat={rider.current_lat} lng={rider.current_lng} riderName={rider.name} />
                 </div>
+              )}
+
+              {routeInfo && (
+                <p className="font-body text-sm text-ink/70 mt-2">
+                  <span className="font-semibold text-ink">{routeInfo.distanceKm.toFixed(1)} km away</span>
+                  {" · ~"}
+                  {Math.round(routeInfo.durationMin)} min to reach you
+                </p>
               )}
             </div>
           )}
