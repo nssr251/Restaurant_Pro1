@@ -1,19 +1,30 @@
-export function playNewOrderChime() {
+// ── Pick your alert sound here ──────────────────────────────────────
+// Options: "chime" (default, pleasant), "buzzer" (urgent/loud),
+// "bell" (classic two-tone), "doorbell" (soft ding-dong)
+export const ALERT_SOUND = "buzzer";
+
+const PRESETS = {
+  chime: { notes: [880, 1108, 1320], wave: "sine", repeats: 2, gap: 0.6 },
+  buzzer: { notes: [660, 880, 660], wave: "square", repeats: 5, gap: 0.7 },
+  bell: { notes: [523, 784], wave: "triangle", repeats: 2, gap: 0.8 },
+  doorbell: { notes: [784, 659], wave: "sine", repeats: 1, gap: 0 },
+};
+
+export function playAlertSound(presetName) {
+  const preset = PRESETS[presetName || ALERT_SOUND] || PRESETS.chime;
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const notes = [660, 880, 660];
-    const repeats = 3;
 
-    for (let r = 0; r < repeats; r++) {
-      notes.forEach((freq, i) => {
+    for (let r = 0; r < preset.repeats; r++) {
+      preset.notes.forEach((freq, i) => {
         const oscillator = ctx.createOscillator();
         const gain = ctx.createGain();
-        oscillator.type = "square"; // sharper/buzzier than sine — reads as louder at same volume
+        oscillator.type = preset.wave;
         oscillator.frequency.value = freq;
 
-        const start = ctx.currentTime + r * 0.7 + i * 0.18;
+        const start = ctx.currentTime + r * preset.gap + i * 0.18;
         gain.gain.setValueAtTime(0.0001, start);
-        gain.gain.exponentialRampToValueAtTime(0.9, start + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.7, start + 0.02);
         gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.32);
 
         oscillator.connect(gain);
@@ -23,10 +34,9 @@ export function playNewOrderChime() {
       });
     }
   } catch {
-    // Audio blocked or unavailable — the visual badge/title count still works
+    // Audio blocked or unavailable — visual/title indicators still work
   }
 
-  // Bonus: vibrate on devices that support it (phones/tablets)
   if (navigator.vibrate) {
     try {
       navigator.vibrate([200, 100, 200, 100, 200]);
@@ -34,6 +44,11 @@ export function playNewOrderChime() {
       // ignore
     }
   }
+}
+
+// Kept for existing call sites — now just plays the configured preset
+export function playNewOrderChime() {
+  playAlertSound();
 }
 
 export function requestNotificationPermission() {
@@ -47,16 +62,21 @@ export function getNotificationPermission() {
   return Notification.permission;
 }
 
-export function showNewOrderNotification(order) {
+export function showNotification(title, body, tag) {
   if (typeof Notification === "undefined") return;
   if (Notification.permission !== "granted") return;
   try {
-    const shortId = order.id.slice(0, 8).toUpperCase();
-    new Notification("New order #" + shortId, {
-      body: (order.customer_name || "A customer") + " · ₹" + order.total_amount,
-      tag: "order-" + order.id,
-    });
+    new Notification(title, { body, tag });
   } catch {
-    // Notifications blocked by the OS/browser — sound + title badge still work
+    // Notifications blocked by the OS/browser — sound still works
   }
+}
+
+export function showNewOrderNotification(order) {
+  const shortId = order.id.slice(0, 8).toUpperCase();
+  showNotification(
+    "New order #" + shortId,
+    (order.customer_name || "A customer") + " · ₹" + order.total_amount,
+    "order-" + order.id
+  );
 }
