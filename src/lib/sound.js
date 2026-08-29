@@ -1,19 +1,43 @@
 // ── Pick your alert sound here ──────────────────────────────────────
 // Options: "chime" (default, pleasant), "buzzer" (urgent/loud),
 // "bell" (classic two-tone), "doorbell" (soft ding-dong)
-export const ALERT_SOUND = "buzzer";
+export const ALERT_SOUND = "chime";
 
 const PRESETS = {
   chime: { notes: [880, 1108, 1320], wave: "sine", repeats: 2, gap: 0.6 },
-  buzzer: { notes: [660, 880, 660], wave: "square", repeats: 5, gap: 0.7 },
+  buzzer: { notes: [660, 880, 660], wave: "square", repeats: 3, gap: 0.7 },
   bell: { notes: [523, 784], wave: "triangle", repeats: 2, gap: 0.8 },
   doorbell: { notes: [784, 659], wave: "sine", repeats: 1, gap: 0 },
 };
 
+// A single reusable audio context, created once and unlocked by a real tap.
+// Creating a fresh context per-alert (the old approach) is unreliable —
+// browsers require an explicit user gesture before audio can play at all.
+let audioCtx = null;
+
+function getAudioContext() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  return audioCtx;
+}
+
+// Call this directly from a button's onClick — this is what actually
+// satisfies the browser's "must come from a user gesture" requirement.
+export function unlockAudio() {
+  const ctx = getAudioContext();
+  if (ctx.state === "suspended") {
+    ctx.resume().catch(() => {});
+  }
+}
+
 export function playAlertSound(presetName) {
   const preset = PRESETS[presetName || ALERT_SOUND] || PRESETS.chime;
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = getAudioContext();
+    if (ctx.state === "suspended") {
+      ctx.resume().catch(() => {});
+    }
 
     for (let r = 0; r < preset.repeats; r++) {
       preset.notes.forEach((freq, i) => {
@@ -60,6 +84,13 @@ export function requestNotificationPermission() {
 export function getNotificationPermission() {
   if (typeof Notification === "undefined") return "unsupported";
   return Notification.permission;
+}
+
+// Call this from a button's onClick — unlocks audio AND asks for notification
+// permission in one go, both of which require a real user gesture to work.
+export function unlockAlerts() {
+  unlockAudio();
+  return requestNotificationPermission();
 }
 
 export function showNotification(title, body, tag) {
