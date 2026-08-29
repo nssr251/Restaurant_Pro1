@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { signOut } from "../../lib/auth";
 import { useOwnerOrders } from "../../hooks/useOwnerOrders";
-import { requestNotificationPermission } from "../../lib/sound";
+import { unlockAlerts } from "../../lib/sound";
 import { fetchAcceptingOrders, setAcceptingOrders } from "../../lib/ownerSettings";
 import { FEATURES } from "../../config";
 
@@ -10,7 +10,9 @@ export default function OwnerLayout() {
   const navigate = useNavigate();
   const ownerOrdersState = useOwnerOrders();
   const { orders, notificationPermission, setNotificationPermission } = ownerOrdersState;
-  const newOrdersCount = orders.filter((o) => o.status === "received").length;
+  const newOrdersCount = orders.filter(
+    (o) => o.status === "received" && o.payment_status !== "awaiting_confirmation"
+  ).length;
 
   const [accepting, setAccepting] = useState(true);
   const [togglingAccepting, setTogglingAccepting] = useState(false);
@@ -44,7 +46,7 @@ export default function OwnerLayout() {
   }
 
   async function handleEnableNotifications() {
-    const result = await requestNotificationPermission();
+    const result = await unlockAlerts();
     setNotificationPermission(result);
   }
 
