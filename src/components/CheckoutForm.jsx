@@ -5,16 +5,41 @@ export default function CheckoutForm({ total, onBack, onSubmit, submitting }) {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [deliveryLat, setDeliveryLat] = useState(null);
+  const [deliveryLng, setDeliveryLng] = useState(null);
+  const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState(null);
 
   const isValid =
     customerName.trim().length > 1 &&
     customerPhone.trim().length >= 10 &&
     (orderType === "pickup" || deliveryAddress.trim().length > 4);
 
+  function handleUseMyLocation() {
+    if (!navigator.geolocation) {
+      setLocationError("Location isn't supported on this device/browser.");
+      return;
+    }
+    setLocating(true);
+    setLocationError(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setDeliveryLat(pos.coords.latitude);
+        setDeliveryLng(pos.coords.longitude);
+        setLocating(false);
+      },
+      () => {
+        setLocationError("Couldn't get your location. You can still type your address below.");
+        setLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 15000 }
+    );
+  }
+
   function handleSubmit(e) {
     e.preventDefault();
     if (!isValid) return;
-    onSubmit({ customerName, customerPhone, orderType, deliveryAddress });
+    onSubmit({ customerName, customerPhone, orderType, deliveryAddress, deliveryLat, deliveryLng });
   }
 
   return (
@@ -84,6 +109,19 @@ export default function CheckoutForm({ total, onBack, onSubmit, submitting }) {
               rows={3}
               placeholder="House/flat no., street, landmark"
             />
+            <button
+              type="button"
+              onClick={handleUseMyLocation}
+              disabled={locating}
+              className="mt-2 font-body text-xs font-semibold text-leaf underline underline-offset-2 disabled:opacity-50"
+            >
+              {locating
+                ? "Getting your location…"
+                : deliveryLat
+                ? "✓ Exact location captured — helps the rider find you faster"
+                : "📍 Use my current location (recommended)"}
+            </button>
+            {locationError && <p className="font-body text-xs text-chili mt-1">{locationError}</p>}
           </div>
         )}
 
