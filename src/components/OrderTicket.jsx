@@ -1,11 +1,19 @@
+import { useState } from "react";
 import { ORDER_STAGES, STAGE_LABELS } from "../lib/orders";
 import DeliveryMap from "./DeliveryMap";
 import { useRouteInfo } from "../hooks/useRouteInfo";
+import { unlockAlerts, getNotificationPermission } from "../lib/sound";
 
 export default function OrderTicket({ order, rider, onNewOrder }) {
   const stages = ORDER_STAGES[order.order_type] || ORDER_STAGES.pickup;
   const currentIndex = stages.indexOf(order.status);
   const shortId = order.id.slice(0, 8).toUpperCase();
+  const [alertPermission, setAlertPermission] = useState(getNotificationPermission());
+
+  async function handleEnableAlerts() {
+    const result = await unlockAlerts();
+    setAlertPermission(result);
+  }
 
   const { info: routeInfo } = useRouteInfo(
     rider?.current_lat,
@@ -33,6 +41,17 @@ export default function OrderTicket({ order, rider, onNewOrder }) {
         />
 
         <div className="px-6 py-6">
+          {alertPermission !== "granted" && alertPermission !== "unsupported" && (
+            <button
+              onClick={handleEnableAlerts}
+              className="w-full mb-4 font-body text-xs font-semibold bg-turmeric/10 text-turmeric border border-turmeric/30 rounded-xl py-2"
+            >
+              {alertPermission === "denied"
+                ? "Notifications blocked — check browser site settings"
+                : "🔔 Get notified when your order status changes"}
+            </button>
+          )}
+
           <p className="font-body text-xs text-ink/50 uppercase tracking-wide mb-4">
             {order.order_type === "delivery" ? "Delivery order" : "Pickup order"}
           </p>
