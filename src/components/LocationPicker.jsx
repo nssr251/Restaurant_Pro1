@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { LocateFixed } from "lucide-react";
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -31,20 +32,27 @@ function Recenter({ lat, lng }) {
 
 export default function LocationPicker({ lat, lng, onChange }) {
   const [fallbackCenter, setFallbackCenter] = useState(DEFAULT_CENTER);
+  const [locating, setLocating] = useState(false);
 
-  useEffect(() => {
-    if (lat && lng) return; // already have a pin — don't override it with GPS
+  function locateMe() {
     if (!navigator.geolocation) return;
+    setLocating(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const newLat = pos.coords.latitude;
         const newLng = pos.coords.longitude;
         setFallbackCenter([newLat, newLng]);
         onChange(newLat, newLng);
+        setLocating(false);
       },
-      () => {},
+      () => setLocating(false),
       { enableHighAccuracy: true, timeout: 8000 }
     );
+  }
+
+  useEffect(() => {
+    if (lat && lng) return; // already have a pin — don't override it with GPS
+    locateMe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -52,7 +60,7 @@ export default function LocationPicker({ lat, lng, onChange }) {
 
   return (
     <div>
-      <div className="rounded-xl overflow-hidden border border-ink/15" style={{ height: "220px" }}>
+      <div className="relative rounded-xl overflow-hidden border border-ink/15" style={{ height: "220px" }}>
         <MapContainer center={position} zoom={15} style={{ height: "100%", width: "100%" }}>
           <TileLayer
             attribution="&copy; OpenStreetMap contributors"
@@ -71,6 +79,16 @@ export default function LocationPicker({ lat, lng, onChange }) {
           <ClickHandler onPick={onChange} />
           <Recenter lat={position[0]} lng={position[1]} />
         </MapContainer>
+
+        <button
+          type="button"
+          onClick={locateMe}
+          disabled={locating}
+          className="absolute top-2.5 right-2.5 z-[1000] bg-white shadow-md rounded-full w-9 h-9 flex items-center justify-center disabled:opacity-50"
+          aria-label="Use my current location"
+        >
+          <LocateFixed size={18} className={"text-ink " + (locating ? "animate-pulse" : "")} />
+        </button>
       </div>
       <p className="font-body text-xs text-ink/40 mt-1.5">
         Tap anywhere on the map or drag the pin to your exact delivery spot.
