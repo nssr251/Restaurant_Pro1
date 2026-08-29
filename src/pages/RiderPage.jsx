@@ -7,6 +7,82 @@ import {
   updateRiderLocation,
   riderAdvanceOrder,
 } from "../lib/rider";
+import { playAlertSound, requestNotificationPermission, showNotification } from "../lib/sound";
+import { useRouteInfo } from "../hooks/useRouteInfo";
+
+function buildNavigationUrl(order) {
+  if (order.delivery_lat && order.delivery_lng) {
+    return "https://www.google.com/maps/dir/?api=1&destination=" + order.delivery_lat + "," + order.delivery_lng;
+  }
+  if (order.delivery_address) {
+    return "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(order.delivery_address);
+  }
+  return null;
+}
+
+function RiderOrderCard({ order, riderLat, riderLng, onStartDelivery, onMarkDelivered }) {
+  const { info: routeInfo } = useRouteInfo(riderLat, riderLng, order.delivery_lat, order.delivery_lng);
+  const navUrl = buildNavigationUrl(order);
+
+  return (
+    <div className="bg-paper rounded-2xl p-4">
+      <p className="font-ticket text-xs text-ink/50 mb-1">#{order.id.slice(0, 8).toUpperCase()}</p>
+      <p className="font-body font-semibold text-ink">{order.customer_name}</p>
+      <p className="font-ticket text-sm text-ink/60 mb-2">{order.customer_phone}</p>
+      {order.delivery_address && (
+        <p className="font-body text-sm text-ink/70 mb-1">{order.delivery_address}</p>
+      )}
+
+      {routeInfo && (
+        <p className="font-body text-xs text-leaf font-semibold mb-2">
+          {routeInfo.distanceKm.toFixed(1)} km · ~{Math.round(routeInfo.durationMin)} min away
+        </p>
+      )}
+
+      {navUrl && (
+        <a
+          href={navUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-block font-body text-xs font-semibold text-ink border border-ink/20 rounded-lg px-3 py-1.5 mb-3"
+        >
+          🧭 Navigate to customer
+        </a>
+      )}
+
+      <ul className="font-body text-xs text-ink/60 space-y-0.5 mb-3">
+        {(order.order_items || []).map((it, i) => (
+          <li key={i}>
+            {it.quantity} × {it.menu_items?.name || "Item"}
+          </li>
+        ))}
+      </ul>
+      <div className="flex items-center justify-between pt-2 border-t border-ink/10 mb-3">
+        <span className="font-body text-xs text-ink/50 uppercase tracking-wide">
+          {order.status.replace(/_/g, " ")}
+        </span>
+        <span className="font-ticket font-bold text-ink">₹{order.total_amount}</span>
+      </div>
+
+      {order.status === "ready" && (
+        <button
+          onClick={() => onStartDelivery(order)}
+          className="w-full bg-turmeric text-ink font-body font-bold py-2.5 rounded-xl"
+        >
+          Start Delivery
+        </button>
+      )}
+      {order.status === "out_for_delivery" && (
+        <button
+          onClick={() => onMarkDelivered(order)}
+          className="w-full bg-leaf text-paper font-body font-bold py-2.5 rounded-xl"
+        >
+          Mark Delivered
+        </button>
+      )}
+    </div>
+  );
+}
 
 export default function RiderPage() {
   const { riderId } = useParams();
@@ -16,13 +92,30 @@ export default function RiderPage() {
   const [error, setError] = useState(null);
   const [tracking, setTracking] = useState(false);
   const [locationError, setLocationError] = useState(null);
+  const [riderPosition, setRiderPosition] = useState({ lat: null, lng: null });
   const watchIdRef = useRef(null);
   const lastSentRef = useRef(0);
+  const knownOrderIdsRef = useRef(new Set());
 
   const load = useCallback(async () => {
     try {
       const [r, o] = await Promise.all([fetchRiderById(riderId), fetchRiderActiveOrders(riderId)]);
       setRider(r);
+
+      // Detect newly-assigned orders (weren't in the list before) to alert the rider
+      const newOnes = o.filter((order) => !knownOrderIdsRef.current.has(order.id));
+      if (knownOrderIdsRef.current.size > 0 && newOnes.length > 0) {
+        playAlertSound();
+        newOnes.forEach((order) => {
+          showNotification(
+            "New delivery assigned",
+            (order.customer_name || "A customer") + " · ₹" + order.total_amount,
+            "rider-order-" + order.id
+          );
+        });
+      }
+      knownOrderIdsRef.current = new Set(o.map((order) => order.id));
+
       setOrders(o);
     } catch (err) {
       setError(err.message || "Could not load your deliveries.");
@@ -34,6 +127,10 @@ export default function RiderPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    requestNotificationPermission();
+  }, []);
 
   useEffect(() => {
     const unsubscribe = subscribeToRiderOrders(riderId, () => load());
@@ -51,6 +148,7 @@ export default function RiderPage() {
       }
       watchIdRef.current = navigator.geolocation.watchPosition(
         (pos) => {
+          setRiderPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude });
           const now = Date.now();
           if (now - lastSentRef.current < 8000) return; // throttle to roughly every 8s
           lastSentRef.current = now;
@@ -129,44 +227,14 @@ export default function RiderPage() {
 
       <div className="space-y-4">
         {orders.map((order) => (
-          <div key={order.id} className="bg-paper rounded-2xl p-4">
-            <p className="font-ticket text-xs text-ink/50 mb-1">#{order.id.slice(0, 8).toUpperCase()}</p>
-            <p className="font-body font-semibold text-ink">{order.customer_name}</p>
-            <p className="font-ticket text-sm text-ink/60 mb-2">{order.customer_phone}</p>
-            {order.delivery_address && (
-              <p className="font-body text-sm text-ink/70 mb-2">{order.delivery_address}</p>
-            )}
-            <ul className="font-body text-xs text-ink/60 space-y-0.5 mb-3">
-              {(order.order_items || []).map((it, i) => (
-                <li key={i}>
-                  {it.quantity} × {it.menu_items?.name || "Item"}
-                </li>
-              ))}
-            </ul>
-            <div className="flex items-center justify-between pt-2 border-t border-ink/10 mb-3">
-              <span className="font-body text-xs text-ink/50 uppercase tracking-wide">
-                {order.status.replace(/_/g, " ")}
-              </span>
-              <span className="font-ticket font-bold text-ink">₹{order.total_amount}</span>
-            </div>
-
-            {order.status === "ready" && (
-              <button
-                onClick={() => handleStartDelivery(order)}
-                className="w-full bg-turmeric text-ink font-body font-bold py-2.5 rounded-xl"
-              >
-                Start Delivery
-              </button>
-            )}
-            {order.status === "out_for_delivery" && (
-              <button
-                onClick={() => handleMarkDelivered(order)}
-                className="w-full bg-leaf text-paper font-body font-bold py-2.5 rounded-xl"
-              >
-                Mark Delivered
-              </button>
-            )}
-          </div>
+          <RiderOrderCard
+            key={order.id}
+            order={order}
+            riderLat={riderPosition.lat}
+            riderLng={riderPosition.lng}
+            onStartDelivery={handleStartDelivery}
+            onMarkDelivered={handleMarkDelivered}
+          />
         ))}
       </div>
     </div>
