@@ -1,4 +1,5 @@
 import { isRestaurantOpen, formatTime } from "../lib/hours";
+import { Phone, MapPin } from "lucide-react";
 
 export default function WelcomeScreen({ restaurantInfo, onEnter, onTrack }) {
   const manuallyPaused = restaurantInfo.accepting_orders === false;
@@ -50,27 +51,34 @@ export default function WelcomeScreen({ restaurantInfo, onEnter, onTrack }) {
         </div>
       )}
 
-      <div className="mt-8 flex items-center gap-4">
+      <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
         {restaurantInfo.contact_phone && (
-          <span className="font-body text-xs text-paper/50">
-            Call {restaurantInfo.contact_phone}
-          </span>
+          <a
+            href={"tel:" + restaurantInfo.contact_phone}
+            className="flex items-center gap-2 bg-paper/10 hover:bg-paper/15 border border-paper/20 rounded-full px-5 py-2.5 transition-colors"
+          >
+            <Phone size={18} className="text-turmeric" strokeWidth={2.2} />
+            <span className="font-body text-sm text-paper font-medium">
+              {restaurantInfo.contact_phone}
+            </span>
+          </a>
         )}
         {mapsUrl && (
           <a
             href={mapsUrl}
             target="_blank"
             rel="noreferrer"
-            className="font-body text-xs text-paper/50 underline underline-offset-2"
+            className="flex items-center gap-2 bg-paper/10 hover:bg-paper/15 border border-paper/20 rounded-full px-5 py-2.5 transition-colors"
           >
-            Get Directions
+            <MapPin size={18} className="text-turmeric" strokeWidth={2.2} />
+            <span className="font-body text-sm text-paper font-medium">Get Directions</span>
           </a>
         )}
       </div>
 
       <button
         onClick={onTrack}
-        className="mt-6 font-body text-xs text-paper/40 underline underline-offset-2"
+        className="mt-6 font-body text-sm text-paper/50 underline underline-offset-2"
       >
         Already ordered? Track your order
       </button>
