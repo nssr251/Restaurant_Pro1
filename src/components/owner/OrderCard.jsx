@@ -1,6 +1,8 @@
 import { STAGE_LABELS } from "../../lib/orders";
 import { timeAgo } from "../../lib/time";
 import { FEATURES } from "../../config";
+import DeliveryMap from "../DeliveryMap";
+import { useRouteInfo } from "../../hooks/useRouteInfo";
 
 const ACTION_LABELS = {
   preparing: "Start preparing",
@@ -13,6 +15,12 @@ const ACTION_LABELS = {
 export default function OrderCard({ order, nextStatus, onAdvance, advancing, riders, onAssignRider }) {
   const items = order.order_items || [];
   const assignedRider = riders?.find((r) => r.id === order.rider_id);
+  const { info: routeInfo } = useRouteInfo(
+    assignedRider?.current_lat,
+    assignedRider?.current_lng,
+    order.delivery_lat,
+    order.delivery_lng
+  );
 
   return (
     <div className="bg-white rounded-xl p-4 shadow-sm border border-ink/5">
@@ -47,9 +55,29 @@ export default function OrderCard({ order, nextStatus, onAdvance, advancing, rid
         !["delivered", "completed"].includes(order.status) && (
         <div className="mb-3">
           {assignedRider ? (
-            <p className="font-body text-xs text-ink/60">
-              Rider: <span className="font-semibold">{assignedRider.name}</span>
-            </p>
+            <div>
+              <p className="font-body text-xs text-ink/60 mb-2">
+                Rider: <span className="font-semibold">{assignedRider.name}</span>
+              </p>
+              {order.status === "out_for_delivery" &&
+                assignedRider.current_lat &&
+                assignedRider.current_lng && (
+                  <>
+                    <DeliveryMap
+                      lat={assignedRider.current_lat}
+                      lng={assignedRider.current_lng}
+                      riderName={assignedRider.name}
+                      height={140}
+                    />
+                    {routeInfo && (
+                      <p className="font-body text-xs text-leaf font-semibold mt-1.5">
+                        {routeInfo.distanceKm.toFixed(1)} km · ~{Math.round(routeInfo.durationMin)} min from
+                        customer
+                      </p>
+                    )}
+                  </>
+                )}
+            </div>
           ) : (
             <select
               defaultValue=""
