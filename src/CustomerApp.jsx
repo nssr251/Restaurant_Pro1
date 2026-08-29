@@ -77,6 +77,11 @@ export default function CustomerApp() {
 
   useEffect(() => {
     if (!order?.rider_id) return;
+    // Realtime UPDATE payloads only carry raw changed columns — not the joined
+    // rider name/phone/location — so refetch once to pick those up immediately.
+    fetchOrder(order.id)
+      .then((fresh) => setOrder((prev) => ({ ...prev, ...fresh })))
+      .catch(() => {});
     const unsubscribe = subscribeToRider(order.rider_id, (updated) => setRider(updated));
     return unsubscribe;
   }, [order?.rider_id]);
