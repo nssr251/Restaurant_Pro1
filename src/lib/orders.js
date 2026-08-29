@@ -14,7 +14,15 @@ export const STAGE_LABELS = {
   completed: "Completed — enjoy!",
 };
 
-export async function createOrder({ customerName, customerPhone, orderType, deliveryAddress, cart }) {
+export async function createOrder({
+  customerName,
+  customerPhone,
+  orderType,
+  deliveryAddress,
+  deliveryLat,
+  deliveryLng,
+  cart,
+}) {
   const { data: info, error: infoError } = await supabase
     .from("restaurant_info")
     .select("accepting_orders")
@@ -34,6 +42,8 @@ export async function createOrder({ customerName, customerPhone, orderType, deli
       customer_phone: customerPhone,
       order_type: orderType,
       delivery_address: orderType === "delivery" ? deliveryAddress : null,
+      delivery_lat: orderType === "delivery" ? deliveryLat : null,
+      delivery_lng: orderType === "delivery" ? deliveryLng : null,
       total_amount: totalAmount,
       status: "received",
       payment_status: "pay_later",
