@@ -7,6 +7,7 @@ import CartSheet, { CartPill } from "./components/CartSheet";
 import CheckoutForm from "./components/CheckoutForm";
 import OrderTicket from "./components/OrderTicket";
 import TrackOrderSearch from "./components/TrackOrderSearch";
+import PaymentScreen from "./components/PaymentScreen";
 import { fetchMenu, fetchRestaurantInfo } from "./lib/menu";
 import { createOrder, fetchOrder, subscribeToOrder, subscribeToRider } from "./lib/orders";
 import { useCart } from "./hooks/useCart";
@@ -87,7 +88,7 @@ export default function CustomerApp() {
       localStorage.setItem(ACTIVE_ORDER_KEY, newOrder.id);
       setOrder(newOrder);
       clearCart();
-      setView("tracking");
+      setView(customerDetails.paymentMethod === "upi" ? "payment" : "tracking");
     } catch (err) {
       alert(err.message || "Something went wrong placing your order. Please try again.");
     } finally {
@@ -113,6 +114,18 @@ export default function CustomerApp() {
         submitting={submitting}
         onBack={() => setView("cart")}
         onSubmit={handlePlaceOrder}
+        upiAvailable={!!restaurantInfo.upi_id}
+      />
+    );
+  }
+
+  if (view === "payment" && order) {
+    return (
+      <PaymentScreen
+        order={order}
+        restaurantName={restaurantInfo.name}
+        upiId={restaurantInfo.upi_id}
+        onContinue={() => setView("tracking")}
       />
     );
   }
