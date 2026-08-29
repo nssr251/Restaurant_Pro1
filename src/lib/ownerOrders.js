@@ -35,6 +35,17 @@ export function subscribeToAllOrders(onInsert, onUpdate) {
   return () => supabase.removeChannel(channel);
 }
 
+export async function confirmPayment(orderId) {
+  const { data, error } = await supabase
+    .from("orders")
+    .update({ payment_status: "paid" })
+    .eq("id", orderId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 export async function assignRiderToOrder(orderId, riderId) {
   const { data, error } = await supabase
     .from("orders")
