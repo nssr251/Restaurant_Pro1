@@ -12,7 +12,16 @@ const ACTION_LABELS = {
   completed: "Mark completed",
 };
 
-export default function OrderCard({ order, nextStatus, onAdvance, advancing, riders, onAssignRider }) {
+export default function OrderCard({
+  order,
+  nextStatus,
+  onAdvance,
+  advancing,
+  riders,
+  onAssignRider,
+  onConfirmPayment,
+  confirmingPayment,
+}) {
   const items = order.order_items || [];
   const assignedRider = riders?.find((r) => r.id === order.rider_id);
   const { info: routeInfo } = useRouteInfo(
@@ -33,6 +42,21 @@ export default function OrderCard({ order, nextStatus, onAdvance, advancing, rid
 
       <p className="font-body text-sm font-semibold text-ink">{order.customer_name}</p>
       <p className="font-ticket text-xs text-ink/50 mb-2">{order.customer_phone}</p>
+
+      {order.payment_status === "awaiting_confirmation" && (
+        <button
+          onClick={() => onConfirmPayment(order)}
+          disabled={confirmingPayment}
+          className="w-full mb-2 font-body text-xs font-semibold bg-turmeric/20 text-turmeric border border-turmeric/40 rounded-lg py-1.5 disabled:opacity-50"
+        >
+          {confirmingPayment ? "Confirming…" : "💰 Confirm UPI payment received"}
+        </button>
+      )}
+      {order.payment_status === "paid" && (
+        <span className="inline-block font-body text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full mb-2 bg-leaf/10 text-leaf">
+          Paid via UPI
+        </span>
+      )}
 
       <span
         className={`inline-block font-body text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full mb-2 ${
