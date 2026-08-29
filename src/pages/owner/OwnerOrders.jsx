@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useOutletContext } from "react-router-dom";
-import { advanceOrderStatus, assignRiderToOrder } from "../../lib/ownerOrders";
+import { advanceOrderStatus, assignRiderToOrder, confirmPayment } from "../../lib/ownerOrders";
 import { fetchAllRiders } from "../../lib/ownerRiders";
 import { ORDER_STAGES } from "../../lib/orders";
 import OrderCard from "../../components/owner/OrderCard";
@@ -27,6 +27,7 @@ function nextStatusFor(order) {
 export default function OwnerOrders() {
   const { orders, loading, error } = useOutletContext();
   const [advancingId, setAdvancingId] = useState(null);
+  const [confirmingId, setConfirmingId] = useState(null);
   const [riders, setRiders] = useState([]);
   const [ridersError, setRidersError] = useState(null);
 
@@ -62,6 +63,17 @@ export default function OwnerOrders() {
       await loadRiders();
     } catch (err) {
       alert(err.message || "Could not assign the rider. Please try again.");
+    }
+  }
+
+  async function handleConfirmPayment(order) {
+    setConfirmingId(order.id);
+    try {
+      await confirmPayment(order.id);
+    } catch (err) {
+      alert(err.message || "Could not confirm payment. Please try again.");
+    } finally {
+      setConfirmingId(null);
     }
   }
 
@@ -107,6 +119,8 @@ export default function OwnerOrders() {
                     advancing={advancingId === order.id}
                     riders={riders}
                     onAssignRider={handleAssignRider}
+                    onConfirmPayment={handleConfirmPayment}
+                    confirmingPayment={confirmingId === order.id}
                   />
                 ))}
               </div>
