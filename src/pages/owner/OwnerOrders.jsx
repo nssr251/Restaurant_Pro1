@@ -81,6 +81,8 @@ export default function OwnerOrders() {
   if (error) return <p className="font-body text-chili">{error}</p>;
 
   const activeOrders = orders.filter((o) => !["delivered", "completed"].includes(o.status));
+  const pendingPayment = activeOrders.filter((o) => o.payment_status === "awaiting_confirmation");
+  const confirmedOrders = activeOrders.filter((o) => o.payment_status !== "awaiting_confirmation");
   const completedTodayCount = orders.filter(
     (o) => ["delivered", "completed"].includes(o.status) && isToday(o.created_at)
   ).length;
@@ -98,9 +100,32 @@ export default function OwnerOrders() {
         </p>
       )}
 
+      {pendingPayment.length > 0 && (
+        <div className="mb-8">
+          <h2 className="font-body text-xs font-semibold text-turmeric uppercase tracking-wide mb-3">
+            ⏳ Awaiting Payment Confirmation ({pendingPayment.length}) — not yet in the kitchen queue
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            {pendingPayment.map((order) => (
+              <OrderCard
+                key={order.id}
+                order={order}
+                nextStatus={null}
+                onAdvance={handleAdvance}
+                advancing={advancingId === order.id}
+                riders={riders}
+                onAssignRider={handleAssignRider}
+                onConfirmPayment={handleConfirmPayment}
+                confirmingPayment={confirmingId === order.id}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {COLUMNS.map((col) => {
-          const colOrders = activeOrders.filter((o) => o.status === col.key);
+          const colOrders = confirmedOrders.filter((o) => o.status === col.key);
           return (
             <div key={col.key}>
               <h2 className="font-body text-xs font-semibold text-ink/50 uppercase tracking-wide mb-3">
