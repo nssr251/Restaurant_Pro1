@@ -62,11 +62,12 @@ export default function CheckoutForm({ total, onBack, onSubmit, submitting, upiA
 
         <div>
           <label className="font-body text-xs font-semibold text-ink/60 uppercase tracking-wide">
-            Your name
+            Your name <span className="text-chili">*</span>
           </label>
           <input
             value={customerName}
             onChange={(e) => setCustomerName(e.target.value)}
+            required
             className="w-full mt-1.5 bg-white border border-ink/15 rounded-xl px-4 py-3 font-body text-ink"
             placeholder="Full name"
           />
@@ -74,12 +75,14 @@ export default function CheckoutForm({ total, onBack, onSubmit, submitting, upiA
 
         <div>
           <label className="font-body text-xs font-semibold text-ink/60 uppercase tracking-wide">
-            Phone number
+            Phone number <span className="text-chili">*</span>
           </label>
           <input
             value={customerPhone}
             onChange={(e) => setCustomerPhone(e.target.value)}
             type="tel"
+            required
+            minLength={10}
             className="w-full mt-1.5 bg-white border border-ink/15 rounded-xl px-4 py-3 font-body text-ink"
             placeholder="10-digit mobile number"
           />
@@ -88,11 +91,12 @@ export default function CheckoutForm({ total, onBack, onSubmit, submitting, upiA
         {orderType === "delivery" && (
           <div>
             <label className="font-body text-xs font-semibold text-ink/60 uppercase tracking-wide">
-              Delivery address (for reference)
+              Delivery address (for reference) <span className="text-chili">*</span>
             </label>
             <textarea
               value={deliveryAddress}
               onChange={(e) => setDeliveryAddress(e.target.value)}
+              required={orderType === "delivery"}
               className="w-full mt-1.5 bg-white border border-ink/15 rounded-xl px-4 py-3 font-body text-ink"
               rows={2}
               placeholder="House/flat no., street, landmark"
