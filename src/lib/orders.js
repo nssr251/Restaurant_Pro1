@@ -67,6 +67,11 @@ export async function createOrder({
   return order;
 }
 
+export async function switchOrderToCOD(orderId) {
+  const { error } = await supabase.rpc("customer_switch_to_cod", { p_order_id: orderId });
+  if (error) throw error;
+}
+
 export async function fetchOrdersByPhone(phone) {
   const { data, error } = await supabase
     .from("orders")
