@@ -1,21 +1,39 @@
 import { useState, useEffect } from "react";
 import QRCode from "qrcode";
+import { switchOrderToCOD } from "../lib/orders";
 
 export default function PaymentScreen({ order, restaurantName, upiId, onContinue }) {
   const [qrDataUrl, setQrDataUrl] = useState(null);
+  const [switching, setSwitching] = useState(false);
+
+  // Include the customer's name alongside the order number in the payment note —
+  // this is what lets the owner tell apart two same-amount orders in their bank app
+  const noteText = "Order " + order.id.slice(0, 8).toUpperCase() + " - " + (order.customer_name || "");
 
   const upiUri =
     "upi://pay?pa=" + encodeURIComponent(upiId) +
     "&pn=" + encodeURIComponent(restaurantName) +
     "&am=" + order.total_amount +
     "&cu=INR" +
-    "&tn=" + encodeURIComponent("Order " + order.id.slice(0, 8).toUpperCase());
+    "&tn=" + encodeURIComponent(noteText);
 
   useEffect(() => {
     QRCode.toDataURL(upiUri, { width: 240, margin: 1 })
       .then(setQrDataUrl)
       .catch(() => setQrDataUrl(null));
   }, [upiUri]);
+
+  async function handleSwitchToCOD() {
+    setSwitching(true);
+    try {
+      await switchOrderToCOD(order.id);
+      onContinue();
+    } catch (err) {
+      alert(err.message || "Could not switch to cash. Please try again.");
+    } finally {
+      setSwitching(false);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-ink flex flex-col items-center px-5 py-10">
@@ -43,11 +61,20 @@ export default function PaymentScreen({ order, restaurantName, upiId, onContinue
 
         <button
           onClick={onContinue}
-          className="w-full bg-leaf text-paper font-body font-bold py-3 rounded-xl hover:bg-leaf-dark transition-colors"
+          className="w-full bg-leaf text-paper font-body font-bold py-3 rounded-xl hover:bg-leaf-dark transition-colors mb-3"
         >
           I've Paid — Continue
         </button>
-        <p className="font-body text-xs text-ink/40 mt-2">
+
+        <button
+          onClick={handleSwitchToCOD}
+          disabled={switching}
+          className="w-full font-body text-sm text-ink/50 underline underline-offset-2 disabled:opacity-50"
+        >
+          {switching ? "Switching…" : "Having trouble paying? Pay with cash instead"}
+        </button>
+
+        <p className="font-body text-xs text-ink/40 mt-3">
           The restaurant will confirm your payment shortly.
         </p>
       </div>
