@@ -11,7 +11,7 @@ import TrackOrderSearch from "./components/TrackOrderSearch";
 import PaymentScreen from "./components/PaymentScreen";
 import { fetchMenu, fetchRestaurantInfo } from "./lib/menu";
 import { createOrder, fetchOrder, subscribeToOrder, subscribeToRider, STAGE_LABELS } from "./lib/orders";
-import { playAlertSound, requestNotificationPermission, showNotification } from "./lib/sound";
+import { playAlertSound, showNotification } from "./lib/sound";
 import { useCart } from "./hooks/useCart";
 import { RESTAURANT_DEFAULTS } from "./config";
 
@@ -86,7 +86,6 @@ export default function CustomerApp() {
 
   useEffect(() => {
     if (!order?.id) return;
-    requestNotificationPermission();
     const unsubscribe = subscribeToOrder(order.id, (updated) => {
       setOrder((prev) => {
         if (prev && updated.status && updated.status !== prev.status) {
