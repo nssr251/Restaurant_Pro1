@@ -9,6 +9,7 @@ import {
 } from "../lib/rider";
 import { playAlertSound, requestNotificationPermission, showNotification } from "../lib/sound";
 import { useRouteInfo } from "../hooks/useRouteInfo";
+import DeliveryMap from "../components/DeliveryMap";
 
 function buildNavigationUrl(order) {
   if (order.delivery_lat && order.delivery_lng) {
@@ -37,6 +38,17 @@ function RiderOrderCard({ order, riderLat, riderLng, onStartDelivery, onMarkDeli
         <p className="font-body text-xs text-leaf font-semibold mb-2">
           {routeInfo.distanceKm.toFixed(1)} km · ~{Math.round(routeInfo.durationMin)} min away
         </p>
+      )}
+
+      {order.delivery_lat && order.delivery_lng && (
+        <div className="mb-3">
+          <DeliveryMap
+            lat={order.delivery_lat}
+            lng={order.delivery_lng}
+            riderName="Customer's location"
+            height={160}
+          />
+        </div>
       )}
 
       {navUrl && (
