@@ -1,7 +1,8 @@
 import { useState } from "react";
 import LocationPicker from "./LocationPicker";
+import { distanceKm } from "../lib/geo";
 
-export default function CheckoutForm({ total, onBack, onSubmit, submitting, upiAvailable }) {
+export default function CheckoutForm({ total, onBack, onSubmit, submitting, upiAvailable, restaurantLat, restaurantLng }) {
   const [orderType, setOrderType] = useState("pickup");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
@@ -10,10 +11,17 @@ export default function CheckoutForm({ total, onBack, onSubmit, submitting, upiA
   const [deliveryLng, setDeliveryLng] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("cod");
 
+  const deliveryDistanceKm =
+    orderType === "delivery" && deliveryLat && deliveryLng && restaurantLat && restaurantLng
+      ? distanceKm(restaurantLat, restaurantLng, deliveryLat, deliveryLng)
+      : null;
+  const tooFar = deliveryDistanceKm !== null && deliveryDistanceKm > 10;
+
   const isValid =
     customerName.trim().length > 1 &&
     customerPhone.trim().length >= 10 &&
-    (orderType === "pickup" || deliveryAddress.trim().length > 4);
+    (orderType === "pickup" || deliveryAddress.trim().length > 4) &&
+    !tooFar;
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -113,6 +121,13 @@ export default function CheckoutForm({ total, onBack, onSubmit, submitting, upiA
                 setDeliveryLng(lng);
               }}
             />
+
+            {tooFar && (
+              <p className="font-body text-sm text-chili bg-chili/10 border border-chili/20 rounded-lg px-3 py-2 mt-2">
+                Sorry, this spot is {deliveryDistanceKm.toFixed(1)} km away — we currently only
+                deliver within 10 km. Try pickup instead, or choose a closer location.
+              </p>
+            )}
           </div>
         )}
 
