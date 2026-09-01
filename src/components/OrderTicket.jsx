@@ -4,7 +4,8 @@ import DeliveryMap from "./DeliveryMap";
 import { useRouteInfo } from "../hooks/useRouteInfo";
 import { unlockAlerts, getNotificationPermission } from "../lib/sound";
 
-export default function OrderTicket({ order, rider, onNewOrder }) {
+export default function OrderTicket({ order, rider, onNewOrder, onCancel, restaurantInfo }) {
+  const [cancelling, setCancelling] = useState(false);
   const stages = ORDER_STAGES[order.order_type] || ORDER_STAGES.pickup;
   const currentIndex = stages.indexOf(order.status);
   const shortId = order.id.slice(0, 8).toUpperCase();
@@ -13,6 +14,18 @@ export default function OrderTicket({ order, rider, onNewOrder }) {
   async function handleEnableAlerts() {
     const result = await unlockAlerts();
     setAlertPermission(result);
+  }
+
+  async function handleCancel() {
+    if (!window.confirm("Cancel this order?")) return;
+    setCancelling(true);
+    try {
+      await onCancel(order.id);
+    } catch (err) {
+      alert(err.message || "Could not cancel the order. Please try again.");
+    } finally {
+      setCancelling(false);
+    }
   }
 
   const { info: routeInfo } = useRouteInfo(
@@ -25,6 +38,18 @@ export default function OrderTicket({ order, rider, onNewOrder }) {
   return (
     <div className="min-h-screen bg-ink flex flex-col items-center px-5 py-10">
       <div className="w-full max-w-sm bg-paper rounded-2xl overflow-hidden shadow-[0_12px_32px_rgba(0,0,0,0.4)]">
+        {restaurantInfo?.name && (
+          <div className="text-center px-6 pt-5 pb-3 border-b border-dashed border-ink/15">
+            <p className="font-ticket text-sm font-bold text-ink">{restaurantInfo.name}</p>
+            {restaurantInfo.address && (
+              <p className="font-ticket text-[11px] text-ink/50 mt-0.5">{restaurantInfo.address}</p>
+            )}
+            {restaurantInfo.contact_phone && (
+              <p className="font-ticket text-[11px] text-ink/50">{restaurantInfo.contact_phone}</p>
+            )}
+          </div>
+        )}
+
         {/* Perforated header strip */}
         <div className="bg-ink text-paper px-6 py-5 relative">
           <p className="font-ticket text-xs text-paper/50 tracking-widest uppercase">Order Ticket</p>
@@ -56,6 +81,11 @@ export default function OrderTicket({ order, rider, onNewOrder }) {
             {order.order_type === "delivery" ? "Delivery order" : "Pickup order"}
           </p>
 
+          {order.status === "cancelled" ? (
+            <div className="bg-chili/10 border border-chili/20 rounded-xl px-4 py-4 text-center">
+              <p className="font-body font-semibold text-chili">This order was cancelled</p>
+            </div>
+          ) : (
           <div className="space-y-4">
             {stages.map((stage, i) => {
               const done = i <= currentIndex;
@@ -80,6 +110,7 @@ export default function OrderTicket({ order, rider, onNewOrder }) {
               );
             })}
           </div>
+          )}
 
           {order.status === "out_for_delivery" && rider && (
             <div className="mt-6 pt-4 border-t border-dashed border-ink/20">
@@ -109,10 +140,20 @@ export default function OrderTicket({ order, rider, onNewOrder }) {
             <span className="font-body text-sm text-ink/60">Total</span>
             <span className="font-ticket font-bold text-ink">₹{order.total_amount}</span>
           </div>
+
+          {!["delivered", "completed", "cancelled", "out_for_delivery"].includes(order.status) && (
+            <button
+              onClick={handleCancel}
+              disabled={cancelling}
+              className="w-full mt-4 font-body text-xs text-chili/70 hover:text-chili disabled:opacity-40"
+            >
+              {cancelling ? "Cancelling…" : "Cancel this order"}
+            </button>
+          )}
         </div>
       </div>
 
-      {(order.status === "delivered" || order.status === "completed") && (
+      {(order.status === "delivered" || order.status === "completed" || order.status === "cancelled") && (
         <button
           onClick={onNewOrder}
           className="mt-6 font-body text-paper/70 text-sm underline"
