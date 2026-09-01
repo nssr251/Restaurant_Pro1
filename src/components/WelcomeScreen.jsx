@@ -7,9 +7,12 @@ export default function WelcomeScreen({ restaurantInfo, onEnter, onTrack }) {
   const withinHours = isRestaurantOpen(restaurantInfo.opens_at, restaurantInfo.closes_at);
   const open = !manuallyPaused && withinHours;
   const hasHours = restaurantInfo.opens_at && restaurantInfo.closes_at;
-  const mapsUrl = restaurantInfo.address
-    ? "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(restaurantInfo.address)
-    : null;
+  const mapsUrl =
+    restaurantInfo.lat && restaurantInfo.lng
+      ? "https://www.google.com/maps/dir/?api=1&destination=" + restaurantInfo.lat + "," + restaurantInfo.lng
+      : restaurantInfo.address
+      ? "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(restaurantInfo.address)
+      : null;
 
   return (
     <div className="min-h-screen bg-ink flex flex-col items-center justify-center px-6 text-center">
