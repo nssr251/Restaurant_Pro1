@@ -148,9 +148,9 @@ export default function OrderTicket({ order, rider, onNewOrder, onCancel, restau
             <button
               onClick={handleCancel}
               disabled={cancelling}
-              className="w-full mt-4 font-body text-xs text-chili/70 hover:text-chili disabled:opacity-40"
+              className="w-full mt-4 bg-chili text-paper font-body font-bold py-3 rounded-xl disabled:opacity-40 hover:bg-chili-dark transition-colors"
             >
-              {cancelling ? "Cancelling…" : "Cancel this order"}
+              {cancelling ? "Cancelling…" : "Cancel This Order"}
             </button>
           )}
         </div>
