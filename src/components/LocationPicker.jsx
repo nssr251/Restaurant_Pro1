@@ -75,8 +75,7 @@ export default function LocationPicker({ lat, lng, onChange }) {
     );
   }
 
-  async function handleSearch(e) {
-    e.preventDefault();
+  async function handleSearch() {
     if (!searchQuery.trim()) return;
     setSearching(true);
     setSearchError(null);
@@ -118,24 +117,31 @@ export default function LocationPicker({ lat, lng, onChange }) {
 
   return (
     <div>
-      <form onSubmit={handleSearch} className="flex gap-2 mb-2">
+      <div className="flex gap-2 mb-2">
         <div className="relative flex-1">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink/30" />
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleSearch();
+              }
+            }}
             placeholder="Search for your address or area…"
             className="w-full bg-white border border-ink/15 rounded-lg pl-8 pr-3 py-2 font-body text-sm text-ink"
           />
         </div>
         <button
-          type="submit"
+          type="button"
+          onClick={handleSearch}
           disabled={searching}
           className="font-body text-xs font-semibold bg-ink text-paper px-3 rounded-lg disabled:opacity-50"
         >
           {searching ? "…" : "Search"}
         </button>
-      </form>
+      </div>
       {searchError && <p className="font-body text-xs text-chili mb-2">{searchError}</p>}
 
       <div className="relative rounded-xl overflow-hidden border border-ink/15" style={{ height: "220px" }}>
