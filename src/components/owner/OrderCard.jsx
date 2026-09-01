@@ -21,6 +21,8 @@ export default function OrderCard({
   onAssignRider,
   onConfirmPayment,
   confirmingPayment,
+  onCancel,
+  cancelling,
 }) {
   const items = order.order_items || [];
   const assignedRider = riders?.find((r) => r.id === order.rider_id);
@@ -135,6 +137,16 @@ export default function OrderCard({
           </button>
         )}
       </div>
+
+      {onCancel && (
+        <button
+          onClick={() => onCancel(order)}
+          disabled={cancelling}
+          className="w-full mt-2 font-body text-xs text-chili/70 hover:text-chili disabled:opacity-40"
+        >
+          {cancelling ? "Cancelling…" : "Cancel this order"}
+        </button>
+      )}
     </div>
   );
 }
