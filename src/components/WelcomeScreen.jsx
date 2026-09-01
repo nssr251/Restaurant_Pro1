@@ -31,9 +31,13 @@ export default function WelcomeScreen({ restaurantInfo, onEnter, onTrack }) {
       )}
 
       {hasHours && !manuallyPaused && (
-        <p className="font-body text-paper/40 text-xs mb-6">
+        <p className="font-body text-paper/40 text-xs mb-2">
           {open ? "Open now" : "Closed"} · {formatTime(restaurantInfo.opens_at)} – {formatTime(restaurantInfo.closes_at)}
         </p>
+      )}
+
+      {restaurantInfo.address && (
+        <p className="font-body text-paper/40 text-xs mb-6 max-w-xs">{restaurantInfo.address}</p>
       )}
 
       {open ? (
@@ -54,7 +58,7 @@ export default function WelcomeScreen({ restaurantInfo, onEnter, onTrack }) {
       <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
         {restaurantInfo.contact_phone && (
           <a
-            href={"tel:" + restaurantInfo.contact_phone}
+            href={"tel:" + restaurantInfo.contact_phone.split(/[/,]/)[0].trim()}
             className="flex items-center gap-2 bg-paper/10 hover:bg-paper/15 border border-paper/20 rounded-full px-5 py-2.5 transition-colors"
           >
             <Phone size={18} className="text-turmeric" strokeWidth={2.2} />
