@@ -10,7 +10,7 @@ import OrderTicket from "./components/OrderTicket";
 import TrackOrderSearch from "./components/TrackOrderSearch";
 import PaymentScreen from "./components/PaymentScreen";
 import { fetchMenu, fetchRestaurantInfo } from "./lib/menu";
-import { createOrder, fetchOrder, subscribeToOrder, subscribeToRider, STAGE_LABELS } from "./lib/orders";
+import { createOrder, fetchOrder, subscribeToOrder, subscribeToRider, cancelOrder, STAGE_LABELS } from "./lib/orders";
 import { playAlertSound, showNotification } from "./lib/sound";
 import { useCart } from "./hooks/useCart";
 import { RESTAURANT_DEFAULTS } from "./config";
@@ -136,7 +136,15 @@ export default function CustomerApp() {
   }
 
   if (view === "tracking" && order) {
-    return <OrderTicket order={order} rider={order.riders || rider} onNewOrder={handleNewOrder} />;
+    return (
+      <OrderTicket
+        order={order}
+        rider={order.riders || rider}
+        onNewOrder={handleNewOrder}
+        onCancel={cancelOrder}
+        restaurantInfo={restaurantInfo}
+      />
+    );
   }
 
   if (view === "checkout") {
@@ -147,6 +155,8 @@ export default function CustomerApp() {
         onBack={() => setView("cart")}
         onSubmit={handlePlaceOrder}
         upiAvailable={!!restaurantInfo.upi_id}
+        restaurantLat={restaurantInfo.lat}
+        restaurantLng={restaurantInfo.lng}
       />
     );
   }
@@ -204,7 +214,12 @@ export default function CustomerApp() {
 
   return (
     <div className="min-h-screen bg-ink">
-      <Header name={restaurantInfo.name} tagline={restaurantInfo.tagline} />
+      <Header
+        name={restaurantInfo.name}
+        tagline={restaurantInfo.tagline}
+        phone={restaurantInfo.contact_phone}
+        address={restaurantInfo.address}
+      />
       <MenuSearchBar value={menuSearch} onChange={setMenuSearch} />
 
       {menuSearch.trim() ? (
