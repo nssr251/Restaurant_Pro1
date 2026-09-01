@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useOutletContext } from "react-router-dom";
-import { advanceOrderStatus, assignRiderToOrder, confirmPayment } from "../../lib/ownerOrders";
+import { advanceOrderStatus, assignRiderToOrder, confirmPayment, ownerCancelOrder } from "../../lib/ownerOrders";
 import { fetchAllRiders } from "../../lib/ownerRiders";
 import { ORDER_STAGES } from "../../lib/orders";
 import OrderCard from "../../components/owner/OrderCard";
@@ -28,6 +28,7 @@ export default function OwnerOrders() {
   const { orders, loading, error } = useOutletContext();
   const [advancingId, setAdvancingId] = useState(null);
   const [confirmingId, setConfirmingId] = useState(null);
+  const [cancellingId, setCancellingId] = useState(null);
   const [riders, setRiders] = useState([]);
   const [ridersError, setRidersError] = useState(null);
 
@@ -77,10 +78,25 @@ export default function OwnerOrders() {
     }
   }
 
+  async function handleCancel(order) {
+    const confirmed = window.confirm(
+      "Cancel this order for " + (order.customer_name || "this customer") + "?"
+    );
+    if (!confirmed) return;
+    setCancellingId(order.id);
+    try {
+      await ownerCancelOrder(order);
+    } catch (err) {
+      alert(err.message || "Could not cancel the order. Please try again.");
+    } finally {
+      setCancellingId(null);
+    }
+  }
+
   if (loading) return <p className="font-body text-ink/60">Loading orders…</p>;
   if (error) return <p className="font-body text-chili">{error}</p>;
 
-  const activeOrders = orders.filter((o) => !["delivered", "completed"].includes(o.status));
+  const activeOrders = orders.filter((o) => !["delivered", "completed", "cancelled"].includes(o.status));
   const pendingPayment = activeOrders.filter((o) => o.payment_status === "awaiting_confirmation");
   const confirmedOrders = activeOrders.filter((o) => o.payment_status !== "awaiting_confirmation");
   const completedTodayCount = orders.filter(
@@ -117,6 +133,8 @@ export default function OwnerOrders() {
                 onAssignRider={handleAssignRider}
                 onConfirmPayment={handleConfirmPayment}
                 confirmingPayment={confirmingId === order.id}
+                onCancel={handleCancel}
+                cancelling={cancellingId === order.id}
               />
             ))}
           </div>
@@ -146,6 +164,8 @@ export default function OwnerOrders() {
                     onAssignRider={handleAssignRider}
                     onConfirmPayment={handleConfirmPayment}
                     confirmingPayment={confirmingId === order.id}
+                    onCancel={handleCancel}
+                    cancelling={cancellingId === order.id}
                   />
                 ))}
               </div>
