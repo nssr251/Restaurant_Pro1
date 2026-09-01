@@ -3,6 +3,7 @@ import { ORDER_STAGES, STAGE_LABELS } from "../lib/orders";
 import DeliveryMap from "./DeliveryMap";
 import { useRouteInfo } from "../hooks/useRouteInfo";
 import { unlockAlerts, getNotificationPermission } from "../lib/sound";
+import { parsePhoneNumbers } from "../lib/phone";
 
 export default function OrderTicket({ order, rider, onNewOrder, onCancel, restaurantInfo }) {
   const [cancelling, setCancelling] = useState(false);
@@ -45,7 +46,9 @@ export default function OrderTicket({ order, rider, onNewOrder, onCancel, restau
               <p className="font-ticket text-[11px] text-ink/50 mt-0.5">{restaurantInfo.address}</p>
             )}
             {restaurantInfo.contact_phone && (
-              <p className="font-ticket text-[11px] text-ink/50">{restaurantInfo.contact_phone}</p>
+              <p className="font-ticket text-[11px] text-ink/50">
+                {parsePhoneNumbers(restaurantInfo.contact_phone).join("  •  ")}
+              </p>
             )}
           </div>
         )}
