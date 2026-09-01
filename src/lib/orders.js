@@ -12,6 +12,7 @@ export const STAGE_LABELS = {
   out_for_delivery: "Out for delivery",
   delivered: "Delivered",
   completed: "Completed — enjoy!",
+  cancelled: "Order cancelled",
 };
 
 export async function createOrder({
@@ -69,6 +70,11 @@ export async function createOrder({
 
 export async function switchOrderToCOD(orderId) {
   const { error } = await supabase.rpc("customer_switch_to_cod", { p_order_id: orderId });
+  if (error) throw error;
+}
+
+export async function cancelOrder(orderId) {
+  const { error } = await supabase.rpc("customer_cancel_order", { p_order_id: orderId });
   if (error) throw error;
 }
 
