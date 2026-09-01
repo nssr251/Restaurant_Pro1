@@ -142,9 +142,9 @@ export default function OrderCard({
         <button
           onClick={() => onCancel(order)}
           disabled={cancelling}
-          className="w-full mt-2 font-body text-xs text-chili/70 hover:text-chili disabled:opacity-40"
+          className="w-full mt-2 font-body text-xs font-semibold text-chili border border-chili/30 rounded-lg py-1.5 hover:bg-chili/5 transition-colors disabled:opacity-40"
         >
-          {cancelling ? "Cancelling…" : "Cancel this order"}
+          {cancelling ? "Cancelling…" : "Cancel Order"}
         </button>
       )}
     </div>
