@@ -1,6 +1,7 @@
 import { isRestaurantOpen, formatTime } from "../lib/hours";
 import { Phone, MapPin } from "lucide-react";
 import { parsePhoneNumbers } from "../lib/phone";
+import DeliveryMap from "./DeliveryMap";
 
 export default function WelcomeScreen({ restaurantInfo, onEnter, onTrack }) {
   const manuallyPaused = restaurantInfo.accepting_orders === false;
@@ -70,18 +71,30 @@ export default function WelcomeScreen({ restaurantInfo, onEnter, onTrack }) {
             <span className="font-body text-sm text-paper font-medium">{number}</span>
           </a>
         ))}
-        {mapsUrl && (
-          <a
-            href={mapsUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-2 bg-paper/10 hover:bg-paper/15 border border-paper/20 rounded-full px-5 py-2.5 transition-colors"
-          >
-            <MapPin size={18} className="text-turmeric" strokeWidth={2.2} />
-            <span className="font-body text-sm text-paper font-medium">Get Directions</span>
-          </a>
-        )}
       </div>
+
+      {restaurantInfo.lat && restaurantInfo.lng && (
+        <div className="w-full max-w-sm mt-6">
+          <DeliveryMap
+            lat={restaurantInfo.lat}
+            lng={restaurantInfo.lng}
+            riderName={restaurantInfo.name + (restaurantInfo.address ? " — " + restaurantInfo.address : "")}
+            height={180}
+          />
+        </div>
+      )}
+
+      {mapsUrl && (
+        <a
+          href={mapsUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center gap-2 bg-paper/10 hover:bg-paper/15 border border-paper/20 rounded-full px-5 py-2.5 transition-colors mt-4"
+        >
+          <MapPin size={18} className="text-turmeric" strokeWidth={2.2} />
+          <span className="font-body text-sm text-paper font-medium">Navigate Here</span>
+        </a>
+      )}
 
       <button
         onClick={onTrack}
