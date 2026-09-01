@@ -46,6 +46,21 @@ export async function confirmPayment(orderId) {
   return data;
 }
 
+export async function ownerCancelOrder(order) {
+  const { data, error } = await supabase
+    .from("orders")
+    .update({ status: "cancelled" })
+    .eq("id", order.id)
+    .select()
+    .single();
+  if (error) throw error;
+
+  if (order.rider_id) {
+    await supabase.from("riders").update({ status: "available" }).eq("id", order.rider_id);
+  }
+  return data;
+}
+
 export async function assignRiderToOrder(orderId, riderId) {
   const { data, error } = await supabase
     .from("orders")
